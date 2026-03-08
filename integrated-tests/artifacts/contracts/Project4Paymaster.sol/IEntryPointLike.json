@@ -1,0 +1,71 @@
+{
+  "_format": "hh3-artifact-1",
+  "contractName": "IEntryPointLike",
+  "sourceName": "contracts/Project4Paymaster.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "unstakeDelaySec",
+          "type": "uint32"
+        }
+      ],
+      "name": "addStake",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "depositTo",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "withdrawAddress",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawStake",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "withdrawAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawTo",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "immutableReferences": {},
+  "inputSourceName": "project/contracts/Project4Paymaster.sol",
+  "buildInfoId": "solc-0_8_28-73db1da7be481ff9f5c612283d0bdd5dd4916cf8"
+}

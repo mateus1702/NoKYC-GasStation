@@ -1,0 +1,21 @@
+{
+  "name": "@project4/paymaster-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts"
+  },
+  "devDependencies": {
+    "@project4/shared": "file:../shared",
+    "@types/node": "^22.19.1",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "@project4/shared": "file:../shared",
+    "viem": "^2.46.3"
+  }
+}

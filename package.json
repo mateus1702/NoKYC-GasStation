@@ -1,0 +1,26 @@
+{
+  "name": "project4",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "contracts",
+    "services/shared",
+    "services/paymaster-api",
+    "services/worker",
+    "services/dashboard"
+  ],
+  "scripts": {
+    "dev:dashboard": "node scripts/prepare-dashboard-env.mjs && npm run dev -w @project4/dashboard",
+    "build": "npm run build -ws --if-present",
+    "build:contracts": "npm run build -w contracts",
+    "build:paymaster-api": "npm run build -w @project4/paymaster-api",
+    "build:worker": "npm run build -w @project4/worker",
+    "build:dashboard": "npm run build -w @project4/dashboard",
+    "test": "npm run test -ws --if-present",
+    "test:contracts": "npm run test -w contracts"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

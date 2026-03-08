@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-dark: #0a0a0f;
+    --card-dark: #12121a;
+    --border-dark: #1e1e2e;
+    --text-primary: #f4f4f5;
+    --text-muted: #71717a;
+    --accent: #6366f1;
+    --success: #22c55e;
+    --error: #ef4444;
+    --glow: rgba(99, 102, 241, 0.25);
+  }
+
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-[var(--bg-dark)] text-[var(--text-primary)];
+    font-family: ui-sans-serif, system-ui, sans-serif, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--card-dark);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* Terminal-style monospace */
+  .font-mono {
+    font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+  }
+}

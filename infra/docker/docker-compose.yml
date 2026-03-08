@@ -1,0 +1,206 @@
+# Project4 - AA Stack with Redis variable-pricing USDC paymaster
+# Usage (from project4 root): docker compose -f infra/docker/docker-compose.yml --env-file .env up -d
+#
+# All configuration via .env. Services: anvil, contract-deployer, bundler-alto, paymaster-api, valkey, worker, dashboard
+
+services:
+  anvil:
+    build:
+      context: ../../services/anvil
+      dockerfile: Dockerfile
+    ports:
+      - "8545:8545"
+    environment:
+      ANVIL_FORK_URL: ${ANVIL_FORK_URL}
+      ANVIL_FORK_BLOCK_NUMBER: ${ANVIL_FORK_BLOCK_NUMBER}
+      ANVIL_ACCOUNTS: ${ANVIL_ACCOUNTS}
+      ANVIL_BLOCK_TIME: ${ANVIL_BLOCK_TIME}
+      ANVIL_HOST: ${ANVIL_HOST}
+      ANVIL_PORT: ${ANVIL_PORT}
+      ANVIL_CHAIN_ID: ${ANVIL_CHAIN_ID}
+      ANVIL_MNEMONIC: ${ANVIL_MNEMONIC}
+      ANVIL_STATE_DIR: ${ANVIL_STATE_DIR}
+    healthcheck:
+      test: ["CMD-SHELL", "cast rpc eth_chainId --rpc-url http://localhost:8545 2>/dev/null || exit 1"]
+      start_interval: 5s
+      start_period: 300s
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  contract-deployer:
+    build:
+      context: ../..
+      dockerfile: services/contract-deployer/Dockerfile
+    environment:
+      ANVIL_RPC: ${ANVIL_RPC}
+      CONTRACT_DEPLOYER_SKIP_DEPLOYMENTS: ${CONTRACT_DEPLOYER_SKIP_DEPLOYMENTS}
+      CONTRACT_DEPLOYER_DEPLOY_PROJECT4_PAYMASTER: ${CONTRACT_DEPLOYER_DEPLOY_PROJECT4_PAYMASTER}
+      CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE: ${CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE}
+      PAYMASTER_CONTRACT_USDC_ADDRESS: ${PAYMASTER_CONTRACT_USDC_ADDRESS}
+      PAYMASTER_CONTRACT_SIGNER_ADDRESS: ${PAYMASTER_CONTRACT_SIGNER_ADDRESS}
+      PAYMASTER_CONTRACT_TREASURY_ADDRESS: ${PAYMASTER_CONTRACT_TREASURY_ADDRESS}
+      CONTRACT_DEPLOYER_CONTRACTS_ARTIFACTS_PATH: ${CONTRACT_DEPLOYER_CONTRACTS_ARTIFACTS_PATH}
+      CONTRACT_DEPLOYER_PRIVATE_KEY: ${CONTRACT_DEPLOYER_PRIVATE_KEY}
+    volumes:
+      - deploy-output:/deploy-output
+    depends_on:
+      anvil:
+        condition: service_healthy
+
+  bundler-alto:
+    build:
+      context: ../../services/bundler-alto
+      dockerfile: Dockerfile
+    ports:
+      - "4337:4337"
+    environment:
+      RPC_URL: ${ALTO_RPC_URL}
+      PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS: ${PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS}
+      ALTO_NETWORK_NAME: ${ALTO_NETWORK_NAME}
+      ALTO_LOG_ENV: ${ALTO_LOG_ENV}
+      ALTO_LOG_LEVEL: ${ALTO_LOG_LEVEL}
+      ALTO_MIN_BALANCE: ${ALTO_MIN_BALANCE}
+      ALTO_MAX_BLOCK_RANGE: ${ALTO_BLOCK_RANGE_LIMIT}
+      ALTO_UTILITY_PRIVATE_KEY: ${ALTO_UTILITY_PRIVATE_KEY}
+      ALTO_EXECUTOR_PRIVATE_KEYS: ${ALTO_EXECUTOR_PRIVATE_KEYS}
+    depends_on:
+      anvil:
+        condition: service_healthy
+      contract-deployer:
+        condition: service_completed_successfully
+      worker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:4337/health 2>/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  paymaster-api:
+    build:
+      context: ../..
+      dockerfile: services/paymaster-api/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - deploy-output:/deploy-output
+    environment:
+      PAYMASTER_API_RPC_URL: ${PAYMASTER_API_RPC_URL}
+      PAYMASTER_API_BUNDLER_URL: ${PAYMASTER_API_BUNDLER_URL}
+      VALKEY_URL: ${VALKEY_URL}
+      VALKEY_KEY_PREFIX: ${VALKEY_KEY_PREFIX}
+      CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE: ${CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE}
+      PAYMASTER_CONTRACT_SIGNER_PRIVATE_KEY: ${PAYMASTER_CONTRACT_SIGNER_PRIVATE_KEY}
+      PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS: ${PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS}
+      PAYMASTER_CONTRACT_VERIFICATION_GAS_LIMIT: ${PAYMASTER_CONTRACT_VERIFICATION_GAS_LIMIT}
+      PAYMASTER_CONTRACT_POSTOP_GAS_LIMIT: ${PAYMASTER_CONTRACT_POSTOP_GAS_LIMIT}
+      PAYMASTER_API_QUOTE_BUFFER_BPS: ${PAYMASTER_API_QUOTE_BUFFER_BPS}
+      PAYMASTER_API_VALIDITY_SECONDS: ${PAYMASTER_API_VALIDITY_SECONDS}
+      PAYMASTER_API_STUB_MAX_COST_USDC_E6: ${PAYMASTER_API_STUB_MAX_COST_USDC_E6}
+      PAYMASTER_API_PORT: ${PAYMASTER_API_PORT}
+      PAYMASTER_API_ENTRYPOINT_ADDRESS: ${PAYMASTER_API_ENTRYPOINT_ADDRESS}
+      PAYMASTER_API_SERVICE_FEE_BPS: ${PAYMASTER_API_SERVICE_FEE_BPS}
+    depends_on:
+      anvil:
+        condition: service_healthy
+      bundler-alto:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "6379:6379"
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dashboard:
+    build:
+      context: ../../services/dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DASHBOARD_RPC_URL: ${DASHBOARD_RPC_URL}
+      REDIS_URL: ${REDIS_URL}
+      CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE: ${CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE}
+      DASHBOARD_TREASURY_ADDRESS: ${DASHBOARD_TREASURY_ADDRESS}
+      DASHBOARD_USDC_ADDRESS: ${DASHBOARD_USDC_ADDRESS}
+      PAYMASTER_API_URL: ${PAYMASTER_API_URL}
+      DASHBOARD_BUNDLER_URL: ${DASHBOARD_BUNDLER_URL}
+      DASHBOARD_ENTRYPOINT_ADDRESS: ${DASHBOARD_ENTRYPOINT_ADDRESS}
+      DASHBOARD_ALTO_UTILITY_KEY: ${DASHBOARD_ALTO_UTILITY_KEY}
+      DASHBOARD_ALTO_EXECUTOR_KEYS: ${DASHBOARD_ALTO_EXECUTOR_KEYS}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS}
+      WORKER_SWAP_USDC_E6: ${WORKER_SWAP_USDC_E6}
+      MIN_ENTRYPOINT_DEPOSIT_WEI: ${MIN_ENTRYPOINT_DEPOSIT_WEI}
+      CAP_ENTRYPOINT_BALANCE_WEI: ${CAP_ENTRYPOINT_BALANCE_WEI}
+      MIN_WORKER_DEPOSIT_WEI: ${MIN_WORKER_DEPOSIT_WEI}
+      CAP_WORKER_BALANCE_WEI: ${CAP_WORKER_BALANCE_WEI}
+      DASHBOARD_USEROPS_BLOCK_RANGE: ${ALTO_BLOCK_RANGE_LIMIT}
+    volumes:
+      - deploy-output:/deploy-output
+    depends_on:
+      anvil:
+        condition: service_healthy
+      contract-deployer:
+        condition: service_completed_successfully
+      paymaster-api:
+        condition: service_started
+      valkey:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: services/worker/Dockerfile
+    environment:
+      WORKER_RPC_URL: ${WORKER_RPC_URL}
+      VALKEY_URL: ${VALKEY_URL}
+      VALKEY_KEY_PREFIX: ${VALKEY_KEY_PREFIX}
+      CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE: ${CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE}
+      WORKER_BOOTSTRAP_PRIVATE_KEY: ${WORKER_BOOTSTRAP_PRIVATE_KEY}
+      WORKER_REVENUE_PRIVATE_KEY: ${WORKER_REVENUE_PRIVATE_KEY}
+      WORKER_REVENUE_ADDRESS: ${WORKER_REVENUE_ADDRESS}
+      WORKER_MONITORING_INTERVAL_SECONDS: ${WORKER_MONITORING_INTERVAL_SECONDS}
+      WORKER_MIN_BOOTSTRAP_USDC: ${WORKER_MIN_BOOTSTRAP_USDC}
+      WORKER_MIN_BOOTSTRAP_GAS: ${WORKER_MIN_BOOTSTRAP_GAS}
+      WORKER_MIN_WORKER_USDC: ${WORKER_MIN_WORKER_USDC}
+      WORKER_MIN_GAS_LIMIT_USDC: ${WORKER_MIN_GAS_LIMIT_USDC}
+      WORKER_PAYMASTER_CONTRACT_USDC_ADDRESS: ${WORKER_PAYMASTER_CONTRACT_USDC_ADDRESS}
+      WORKER_TREASURY_PRIVATE_KEY: ${WORKER_TREASURY_PRIVATE_KEY}
+      WORKER_PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS: ${WORKER_PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS}
+      WORKER_UNISWAP_V3_ROUTER: ${WORKER_UNISWAP_V3_ROUTER}
+      WORKER_WRAPPED_NATIVE_TOKEN: ${WORKER_WRAPPED_NATIVE_TOKEN}
+      WORKER_UNISWAP_POOL_FEE: ${WORKER_UNISWAP_POOL_FEE}
+      ALTO_UTILITY_PRIVATE_KEY: ${ALTO_UTILITY_PRIVATE_KEY}
+      ALTO_EXECUTOR_PRIVATE_KEYS: ${ALTO_EXECUTOR_PRIVATE_KEYS}
+      SHARED_PRICING_ARCHIVE_SWAP_THRESHOLD: ${SHARED_PRICING_ARCHIVE_SWAP_THRESHOLD}
+    volumes:
+      - deploy-output:/deploy-output
+    depends_on:
+      anvil:
+        condition: service_healthy
+      contract-deployer:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:8080/health 2>/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  deploy-output: {}
+  valkey-data: {}

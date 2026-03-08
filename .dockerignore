@@ -1,0 +1,40 @@
+# Dependencies - rebuilt in container
+node_modules
+**/node_modules
+
+# Git
+.git
+.gitignore
+
+# Contract build artifacts
+contracts/artifacts
+contracts/cache
+contracts/typechain-types
+
+# Next.js build
+.next
+**/.next
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and temp
+*.log
+npm-debug.log*
+.DS_Store
+*.tgz
+
+# IDE and misc
+.idea
+.vscode
+*.swp
+*.swo
+
+# Test and coverage
+coverage
+.nyc_output
+**/__tests__
+**/*.test.ts
+**/*.spec.ts

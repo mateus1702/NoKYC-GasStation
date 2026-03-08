@@ -1,0 +1,21 @@
+{
+  "name": "@project4/worker",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "devDependencies": {
+    "@project4/shared": "file:../shared",
+    "@types/node": "^22.19.1",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "@project4/shared": "file:../shared",
+    "viem": "^2.46.3"
+  }
+}

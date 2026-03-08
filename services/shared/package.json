@@ -1,0 +1,22 @@
+{
+  "name": "@project4/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "npm run build && node --experimental-vm-modules node_modules/mocha/bin/mocha 'dist/__tests__/*.test.js'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "chai": "^5.3.3",
+    "mocha": "^11.7.5",
+    "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.2",
+    "viem": "^2.46.3"
+  }
+}

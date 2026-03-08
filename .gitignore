@@ -1,0 +1,23 @@
+node_modules
+dist
+build
+.next
+.cache
+
+# Contract build artifacts (Hardhat)
+contracts/artifacts
+contracts/cache
+contracts/typechain-types
+
+*.log
+.env
+.env.local
+.env.*.local
+*.sqlite
+.DS_Store
+coverage
+.idea
+.vscode
+*.key
+*.pem
+runtime/

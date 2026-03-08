@@ -1,0 +1,26 @@
+{
+  "name": "@project4/aa-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx src/test-project4-variable-fee.ts",
+    "test:project4:fee": "tsx src/test-project4-variable-fee.ts",
+    "test:project4:fee:loop": "cross-env RUN_UNTIL_EMPTY=true tsx src/test-project4-variable-fee.ts",
+    "test:project4:underpricing": "tsx src/test-project4-underpricing.ts",
+    "test:vuln:gas-griefing": "tsx src/test-vuln-gas-griefing.ts",
+    "test:vuln:gas-estimation": "tsx src/test-vuln-gas-estimation.ts",
+    "test:profitability": "tsx src/test-profitability.ts",
+    "test:all-vulnerabilities": "npm run test:contract-tests && npm run test:vuln:gas-griefing && npm run test:vuln:gas-estimation",
+    "test:contract-tests": "cd ../../contracts && npx hardhat test test/Project4Paymaster.test.ts"
+  },
+  "dependencies": {
+    "permissionless": "^0.2.25",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.0"
+  }
+}
