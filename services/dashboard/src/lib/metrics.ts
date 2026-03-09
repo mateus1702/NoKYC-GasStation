@@ -1,5 +1,5 @@
 /**
- * Server-side metrics aggregation for Project4 AA dashboard.
+ * Server-side metrics aggregation for NoKYC-GasStation dashboard.
  * Reads Redis, RPC, health endpoints. Fail-soft per section.
  */
 import { readFile } from "node:fs/promises";

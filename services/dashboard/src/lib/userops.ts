@@ -1,5 +1,5 @@
 /**
- * Fetch latest processed UserOps from GasCharged events on Project4Paymaster.
+ * Fetch latest processed UserOps from GasCharged events on NoKYC-GasStation Paymaster.
  * No docker dependency; uses RPC + paymaster address.
  */
 import { readFile } from "node:fs/promises";

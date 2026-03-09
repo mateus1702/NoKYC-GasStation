@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Project4 AA Dashboard",
-  description: "Monitor paymaster and worker metrics",
+  title: "NoKYC-GasStation - ERC-4337 Paymaster Dashboard",
+  description: "Real-time monitoring of ERC-4337 paymaster operations, gas reserves, and transaction metrics for NoKYC-GasStation",
+  keywords: ["ERC-4337", "paymaster", "gas station", "blockchain", "polygon", "user operations"],
+  authors: [{ name: "NoKYC-GasStation" }],
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

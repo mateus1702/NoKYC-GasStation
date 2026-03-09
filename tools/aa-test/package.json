@@ -6,7 +6,7 @@
   "scripts": {
     "test": "tsx src/test-project4-variable-fee.ts",
     "test:project4:fee": "tsx src/test-project4-variable-fee.ts",
-    "test:project4:fee:loop": "cross-env RUN_UNTIL_EMPTY=true tsx src/test-project4-variable-fee.ts",
+    "test:project4:fee:loop": "cross-env TOOLS_RUN_UNTIL_EMPTY=true tsx src/test-project4-variable-fee.ts",
     "test:project4:underpricing": "tsx src/test-project4-underpricing.ts",
     "test:vuln:gas-griefing": "tsx src/test-vuln-gas-griefing.ts",
     "test:vuln:gas-estimation": "tsx src/test-vuln-gas-estimation.ts",
