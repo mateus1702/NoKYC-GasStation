@@ -20,6 +20,7 @@ services:
       ANVIL_CHAIN_ID: ${ANVIL_CHAIN_ID}
       ANVIL_MNEMONIC: ${ANVIL_MNEMONIC}
       ANVIL_STATE_DIR: ${ANVIL_STATE_DIR}
+      ANVIL_VERBOSITY: ${ANVIL_VERBOSITY:--v}
     healthcheck:
       test: ["CMD-SHELL", "cast rpc eth_chainId --rpc-url http://localhost:8545 2>/dev/null || exit 1"]
       start_interval: 5s

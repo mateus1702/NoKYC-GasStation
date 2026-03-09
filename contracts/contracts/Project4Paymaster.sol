@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { IERC20 } from "./lib/IERC20.sol";
 import { Ownable } from "./lib/Ownable.sol";
+import "hardhat/console.sol";
 
 interface IEntryPointLike {
     function depositTo(address account) external payable;
@@ -273,14 +274,36 @@ contract Project4Paymaster is Ownable {
         if (context.length > 0 && mode == PostOpMode.opSucceeded) {
             (address sender, uint256 maxCostUsdcE6, uint256 unitCostUsdcPerWei, uint256 minPostopFeeUsdcE6) = abi.decode(context, (address, uint256, uint256, uint256));
             if (maxCostUsdcE6 > 0 && unitCostUsdcPerWei > 0) {
-                uint256 chargeAmount = (actualGasCost * unitCostUsdcPerWei) / 1e18;
+                uint256 initialChargeAmount = (actualGasCost * unitCostUsdcPerWei) / 1e18;
+                uint256 chargeAmount = initialChargeAmount;
+                bool wasMinFeeApplied = false;
+                bool wasMaxFeeApplied = false;
+
                 // Enforce minimum whenever charging is active, even if integer division truncates to zero.
                 if (chargeAmount < minPostopFeeUsdcE6) {
                     chargeAmount = minPostopFeeUsdcE6;
+                    wasMinFeeApplied = true;
                 }
                 if (chargeAmount > maxCostUsdcE6) {
                     chargeAmount = maxCostUsdcE6;
+                    wasMaxFeeApplied = true;
                 }
+
+                // Log all variables for debugging
+                console.log("=== PostOp Processing Debug ===");
+                console.log("Sender:", sender);
+                console.log("Max Cost USDC E6:", maxCostUsdcE6);
+                console.log("Unit Cost USDC per Wei:", unitCostUsdcPerWei);
+                console.log("Min PostOp Fee USDC E6:", minPostopFeeUsdcE6);
+                console.log("Initial Charge Amount:", initialChargeAmount);
+                console.log("Final Charge Amount:", chargeAmount);
+                console.log("Was Min Fee Applied:", wasMinFeeApplied);
+                console.log("Was Max Fee Applied:", wasMaxFeeApplied);
+                console.log("Treasury Address:", treasury);
+                console.log("Actual Gas Cost:", actualGasCost);
+                console.log("Actual UserOp Fee:", actualUserOpFee);
+                console.log("================================");
+
                 if (chargeAmount > 0) {
                     if (!usdc.transferFrom(sender, treasury, chargeAmount)) revert UsdcTransferFromFailed();
                     emit GasCharged(sender, chargeAmount, actualGasCost);
