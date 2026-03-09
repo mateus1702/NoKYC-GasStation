@@ -855,7 +855,7 @@ export default function DashboardPage() {
                                   {op.wasMinFeeApplied ? "⚠️" : "✓"} Min
                                 </span>
                                 <span className="text-xs text-slate-400">
-                                  {(Number(op.minPostopFeeUsdcE6) / 1e6).toFixed(2)}
+                                  {(Number(op.minPostopFeeUsdcE6) / 1e6).toFixed(6)}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1">
@@ -863,7 +863,7 @@ export default function DashboardPage() {
                                   {op.wasMaxFeeApplied ? "⚠️" : "✓"} Max
                                 </span>
                                 <span className="text-xs text-slate-400">
-                                  {(Number(op.maxCostUsdcE6) / 1e6).toFixed(2)}
+                                  {(Number(op.maxCostUsdcE6) / 1e6).toFixed(6)}
                                 </span>
                               </div>
                             </div>
