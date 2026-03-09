@@ -21,3 +21,4 @@ coverage
 *.key
 *.pem
 runtime/
+PrivateNotes.txt
