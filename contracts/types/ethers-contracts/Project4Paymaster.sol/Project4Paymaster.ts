@@ -125,9 +125,9 @@ decodeFunctionResult(functionFragment: 'withdrawTo', data: BytesLike): Result;
   
 
     export namespace GasChargedEvent {
-      export type InputTuple = [sender: AddressLike, chargedUsdcE6: BigNumberish, chargedWei: BigNumberish];
-      export type OutputTuple = [sender: string, chargedUsdcE6: bigint, chargedWei: bigint];
-      export interface OutputObject {sender: string, chargedUsdcE6: bigint, chargedWei: bigint };
+      export type InputTuple = [sender: AddressLike, chargedUsdcE6: BigNumberish, chargedWei: BigNumberish, initialChargeAmount: BigNumberish, maxCostUsdcE6: BigNumberish, unitCostUsdcPerWei: BigNumberish, minPostopFeeUsdcE6: BigNumberish, treasury: AddressLike, wasMinFeeApplied: boolean, wasMaxFeeApplied: boolean];
+      export type OutputTuple = [sender: string, chargedUsdcE6: bigint, chargedWei: bigint, initialChargeAmount: bigint, maxCostUsdcE6: bigint, unitCostUsdcPerWei: bigint, minPostopFeeUsdcE6: bigint, treasury: string, wasMinFeeApplied: boolean, wasMaxFeeApplied: boolean];
+      export interface OutputObject {sender: string, chargedUsdcE6: bigint, chargedWei: bigint, initialChargeAmount: bigint, maxCostUsdcE6: bigint, unitCostUsdcPerWei: bigint, minPostopFeeUsdcE6: bigint, treasury: string, wasMinFeeApplied: boolean, wasMaxFeeApplied: boolean };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -837,7 +837,7 @@ getEvent(key: 'VerifierUpdated'): TypedContractEvent<VerifierUpdatedEvent.InputT
       CircuitBreakerTriggered: TypedContractEvent<CircuitBreakerTriggeredEvent.InputTuple, CircuitBreakerTriggeredEvent.OutputTuple, CircuitBreakerTriggeredEvent.OutputObject>;
     
 
-      'GasCharged(address,uint256,uint256)': TypedContractEvent<GasChargedEvent.InputTuple, GasChargedEvent.OutputTuple, GasChargedEvent.OutputObject>;
+      'GasCharged(address,uint256,uint256,uint256,uint256,uint256,uint256,address,bool,bool)': TypedContractEvent<GasChargedEvent.InputTuple, GasChargedEvent.OutputTuple, GasChargedEvent.OutputObject>;
       GasCharged: TypedContractEvent<GasChargedEvent.InputTuple, GasChargedEvent.OutputTuple, GasChargedEvent.OutputObject>;
     
 

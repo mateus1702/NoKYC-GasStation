@@ -155,7 +155,7 @@ PAYMASTER_API_QUOTE_BUFFER_BPS=1000
 
 # Minimum post-op fee (10000 = 0.01 USDC)
 # Enforced even if gas calculation results in 0
-MIN_POSTOP_FEE_USDC_E6=10000
+PAYMASTER_API_MIN_POSTOP_FEE_USDC_E6=10000
 ```
 
 ### Contract Addresses

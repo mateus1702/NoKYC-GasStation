@@ -806,15 +806,19 @@ export default function DashboardPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-slate-700/50">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Block</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Sender</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">USDC Charged</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas Used</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Block</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Sender</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">USDC Charged</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas (units)</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas Cost (wei)</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Initial Charge</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas Price</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Limits</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/30">
-                      {userOpsData.items.map((op: { blockNumber: number; sender: string; chargedUsdcE6: string; chargedWei: string; transactionHash: string }, i: number) => (
+                      {userOpsData.items.map((op: { blockNumber: number; sender: string; chargedUsdcE6: string; chargedWei: string; gasUsed: string; transactionHash: string; initialChargeAmount: string; maxCostUsdcE6: string; unitCostUsdcPerWei: string; minPostopFeeUsdcE6: string; treasury: string; wasMinFeeApplied: boolean; wasMaxFeeApplied: boolean }, i: number) => (
                         <motion.tr
                           key={`${op.transactionHash}-${i}`}
                           initial={{ opacity: 0, y: 10 }}
@@ -822,22 +826,51 @@ export default function DashboardPage() {
                           transition={{ delay: i * 0.05 }}
                           className="hover:bg-slate-800/30 transition-colors"
                         >
-                          <td className="px-6 py-4 text-sm font-mono text-slate-300">{op.blockNumber}</td>
-                          <td className="px-6 py-4 text-sm font-mono text-slate-300 truncate max-w-[140px]" title={op.sender}>
+                          <td className="px-4 py-4 text-sm font-mono text-slate-300">{op.blockNumber}</td>
+                          <td className="px-4 py-4 text-sm font-mono text-slate-300 truncate max-w-[120px]" title={op.sender}>
                             <span className="inline-flex items-center gap-2">
                               <span className="truncate">{op.sender.slice(0, 6)}…{op.sender.slice(-4)}</span>
                               <CopyButton value={op.sender} />
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm font-mono text-purple-300">
+                          <td className="px-4 py-4 text-sm font-mono text-purple-300">
                             {(Number(op.chargedUsdcE6) / 1e6).toFixed(6)} USDC
                           </td>
-                          <td className="px-6 py-4 text-sm font-mono text-green-300">
+                          <td className="px-4 py-4 text-sm font-mono text-green-300">
+                            {op.gasUsed !== "-" ? Number(op.gasUsed).toLocaleString() : "-"}
+                          </td>
+                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
                             {op.chargedWei} wei
                           </td>
-                          <td className="px-6 py-4 text-sm font-mono text-slate-300">
+                          <td className="px-4 py-4 text-sm font-mono text-blue-300">
+                            {(Number(op.initialChargeAmount) / 1e6).toFixed(6)} USDC
+                          </td>
+                          <td className="px-4 py-4 text-sm font-mono text-orange-300">
+                            {(Number(op.unitCostUsdcPerWei) / 1e18).toFixed(2)} USDC/wei
+                          </td>
+                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1">
+                                <span className={op.wasMinFeeApplied ? "text-red-400" : "text-green-400"}>
+                                  {op.wasMinFeeApplied ? "⚠️" : "✓"} Min
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {(Number(op.minPostopFeeUsdcE6) / 1e6).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className={op.wasMaxFeeApplied ? "text-yellow-400" : "text-green-400"}>
+                                  {op.wasMaxFeeApplied ? "⚠️" : "✓"} Max
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {(Number(op.maxCostUsdcE6) / 1e6).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
                             <span className="inline-flex items-center gap-2">
-                              <span className="truncate max-w-[120px]" title={op.transactionHash}>
+                              <span className="truncate max-w-[100px]" title={op.transactionHash}>
                                 {op.transactionHash ? `${op.transactionHash.slice(0, 8)}…` : "-"}
                               </span>
                               {op.transactionHash && (

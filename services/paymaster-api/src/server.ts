@@ -27,6 +27,7 @@ const VALIDITY_SECONDS = Number(process.env.PAYMASTER_API_VALIDITY_SECONDS!);
 const PM_VERIFICATION_GAS = BigInt(process.env.PAYMASTER_CONTRACT_VERIFICATION_GAS_LIMIT!);
 const PM_POSTOP_GAS = BigInt(process.env.PAYMASTER_CONTRACT_POSTOP_GAS_LIMIT!);
 const STUB_MAX_COST_USDC_E6 = BigInt(process.env.PAYMASTER_API_STUB_MAX_COST_USDC_E6!);
+const MIN_POSTOP_FEE_USDC_E6 = BigInt(process.env.PAYMASTER_API_MIN_POSTOP_FEE_USDC_E6 ?? "10000"); // 0.01 USDC default
 
 if (!SIGNER_PRIVATE_KEY) throw new Error("PAYMASTER_CONTRACT_SIGNER_PRIVATE_KEY required (set in .env)");
 if (!PAYMASTER_ADDRESS_FILE) throw new Error("CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE required (set in .env)");
@@ -58,8 +59,6 @@ async function getUnitCostUsdcPerWei(): Promise<bigint> {
   return 1000n;
 }
 
-// Minimum postOp fee: 0.01 USDC (10,000 units with 6 decimals)
-const MIN_POSTOP_FEE_USDC_E6 = 10_000n;
 const signer = privateKeyToAccount(
   (SIGNER_PRIVATE_KEY.startsWith("0x") ? SIGNER_PRIVATE_KEY : `0x${SIGNER_PRIVATE_KEY}`) as `0x${string}`
 );

@@ -5,7 +5,7 @@ COPY contracts/package.json contracts/
 COPY contracts/contracts contracts/contracts
 COPY contracts/hardhat.config.ts contracts/
 WORKDIR /build/contracts
-RUN npm install && npx hardhat compile --force --quiet
+RUN npm install && npx hardhat compile --force
 
 FROM node:22-alpine
 WORKDIR /app
