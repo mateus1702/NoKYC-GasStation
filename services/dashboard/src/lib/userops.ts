@@ -6,10 +6,10 @@ import { readFile } from "node:fs/promises";
 import { createPublicClient, http as viemHttp, parseAbiItem } from "viem";
 import { polygon } from "viem/chains";
 
-const PAYMASTER_ADDRESS_FILE = process.env.CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE!;
+const PAYMASTER_ADDRESS_FILE = process.env.CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE || "";
 const PAYMASTER_ADDRESS_ENV = (process.env.PAYMASTER_ADDRESS || "").trim().toLowerCase();
-const PAYMASTER_API_URL = process.env.PAYMASTER_API_URL!.trim().replace(/\/$/, "");
-const RPC_URL = process.env.DASHBOARD_RPC_URL!;
+const PAYMASTER_API_URL = (process.env.PAYMASTER_API_URL || "").trim().replace(/\/$/, "");
+const RPC_URL = process.env.DASHBOARD_RPC_URL || "";
 const DEFAULT_LIMIT = 30;
 /** Env override: max block range for eth_getLogs. If set, use only this (no retry). */
 const USEROPS_BLOCK_RANGE = process.env.DASHBOARD_USEROPS_BLOCK_RANGE ? BigInt(process.env.DASHBOARD_USEROPS_BLOCK_RANGE) : null;

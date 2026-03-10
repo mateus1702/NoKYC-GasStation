@@ -8,18 +8,21 @@ import { createPublicClient, http as viemHttp } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { polygon } from "viem/chains";
 
-const ENTRYPOINT_ADDRESS = process.env.DASHBOARD_ENTRYPOINT_ADDRESS!.toLowerCase();
-const PAYMASTER_ADDRESS_FILE = process.env.CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE!;
+const ENTRYPOINT_ADDRESS = (process.env.DASHBOARD_ENTRYPOINT_ADDRESS || "").toLowerCase();
+const PAYMASTER_ADDRESS_FILE = process.env.CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE || "";
 const PAYMASTER_ADDRESS_ENV = (process.env.PAYMASTER_ADDRESS || "").trim().toLowerCase();
-const TREASURY_ADDRESS = process.env.DASHBOARD_TREASURY_ADDRESS!.toLowerCase();
-const RPC_URL = process.env.DASHBOARD_RPC_URL!;
-const VALKEY_URL = process.env.VALKEY_URL ?? process.env.REDIS_URL!;
-const VALKEY_KEY_PREFIX = process.env.VALKEY_KEY_PREFIX!;
-const PAYMASTER_API_URL = process.env.PAYMASTER_API_URL!;
-const BUNDLER_URL = process.env.DASHBOARD_BUNDLER_URL!;
-const USDC_ADDRESS = process.env.DASHBOARD_USDC_ADDRESS!.toLowerCase();
-const ALTO_UTILITY_KEY = process.env.DASHBOARD_ALTO_UTILITY_KEY!.trim();
-const ALTO_EXECUTOR_KEYS = process.env.DASHBOARD_ALTO_EXECUTOR_KEYS!.split(",").map((k) => k.trim()).filter(Boolean);
+const TREASURY_ADDRESS = (process.env.DASHBOARD_TREASURY_ADDRESS || "").toLowerCase();
+const RPC_URL = process.env.DASHBOARD_RPC_URL || "";
+const VALKEY_URL = process.env.VALKEY_URL ?? process.env.REDIS_URL ?? "";
+const VALKEY_KEY_PREFIX = process.env.VALKEY_KEY_PREFIX || "";
+const PAYMASTER_API_URL = process.env.PAYMASTER_API_URL || "";
+const BUNDLER_URL = process.env.DASHBOARD_BUNDLER_URL || "";
+const USDC_ADDRESS = (process.env.DASHBOARD_USDC_ADDRESS || "").toLowerCase();
+const ALTO_UTILITY_KEY = (process.env.DASHBOARD_ALTO_UTILITY_KEY || "").trim();
+const ALTO_EXECUTOR_KEYS = (process.env.DASHBOARD_ALTO_EXECUTOR_KEYS || "")
+  .split(",")
+  .map((k) => k.trim())
+  .filter(Boolean);
 
 const PRICING_SPENT = `${VALKEY_KEY_PREFIX}pricing:total_usdc_spent_e6`;
 const PRICING_GAS = `${VALKEY_KEY_PREFIX}pricing:total_gas_returned_wei`;
