@@ -13,8 +13,13 @@ const RPC_URL = process.env.DASHBOARD_RPC_URL || "";
 const DEFAULT_LIMIT = 30;
 /** Env override: max block range for eth_getLogs. If set, use only this (no retry). */
 const USEROPS_BLOCK_RANGE = process.env.DASHBOARD_USEROPS_BLOCK_RANGE ? BigInt(process.env.DASHBOARD_USEROPS_BLOCK_RANGE) : null;
-/** Block ranges to try when env not set. Probed: Anvil+Ankr fork limit is 1024 blocks. */
-const BLOCK_RANGES_TO_TRY = USEROPS_BLOCK_RANGE != null ? [USEROPS_BLOCK_RANGE] : [1024n, 512n, 256n, 128n];
+/** Cap at 2048 - many public RPCs (Ankr, etc.) reject eth_getLogs with larger ranges. */
+const MAX_SAFE_BLOCK_RANGE = 2048n;
+/** Block ranges to try. Capped to avoid "block range too large" from RPCs. */
+const BLOCK_RANGES_TO_TRY =
+  USEROPS_BLOCK_RANGE != null
+    ? [USEROPS_BLOCK_RANGE > MAX_SAFE_BLOCK_RANGE ? MAX_SAFE_BLOCK_RANGE : USEROPS_BLOCK_RANGE]
+    : [1024n, 512n, 256n, 128n];
 
 export interface ProcessedUserOp {
   blockNumber: number;
