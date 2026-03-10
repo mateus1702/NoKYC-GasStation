@@ -465,6 +465,63 @@ async function verifyBootstrapFunding(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Checks whether operational accounts are already funded above the current threshold.
+ * Used at startup to make bootstrap distribution idempotent across restarts.
+ */
+async function areOperationalAccountsFunded(): Promise<boolean> {
+  const treasuryPrivateKey = WORKER_TREASURY_PRIVATE_KEY!;
+  const workerAccount = privateKeyToAccount(
+    (treasuryPrivateKey.startsWith("0x") ? treasuryPrivateKey : `0x${treasuryPrivateKey}`) as `0x${string}`
+  );
+
+  const publicClient = createPublicClient({
+    chain: polygon,
+    transport: viemHttp(WORKER_RPC_URL!),
+  });
+
+  const paymasterAddress = await resolvePaymasterAddress();
+  const minGasLimitWei = await getMinGasLimitWei(true);
+
+  const entryPointDeposit = (await publicClient.readContract({
+    address: WORKER_PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS! as `0x${string}`,
+    abi: ENTRYPOINT_ABI,
+    functionName: "balanceOf",
+    args: [paymasterAddress],
+  })) as bigint;
+
+  if (entryPointDeposit < minGasLimitWei) {
+    console.log(
+      `[worker] EntryPoint deposit below threshold: ${formatWeiAsEth(entryPointDeposit)} < ${formatWeiAsEth(minGasLimitWei)}`
+    );
+    return false;
+  }
+
+  // De-duplicate when revenue and worker are the same address.
+  const workerAddr = workerAccount.address.toLowerCase();
+  const revenueAddr = WORKER_REVENUE_ADDRESS.toLowerCase();
+  const accounts: { name: string; address: `0x${string}` }[] = [
+    { name: "worker", address: workerAccount.address },
+    ...(workerAddr !== revenueAddr ? [{ name: "revenue", address: WORKER_REVENUE_ADDRESS }] : []),
+  ];
+
+  WORKER_BUNDLER_ADDRESSES.forEach((address, index) => {
+    accounts.push({ name: `bundler-${index}`, address });
+  });
+
+  for (const account of accounts) {
+    const gasBalance = await publicClient.getBalance({ address: account.address });
+    if (gasBalance < minGasLimitWei) {
+      console.log(
+        `[worker] ${account.name} below threshold: ${formatWeiAsEth(gasBalance)} < ${formatWeiAsEth(minGasLimitWei)}`
+      );
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 
 /**
@@ -831,6 +888,14 @@ async function fundBootstrapFromWhale(): Promise<void> {
 
 async function performInitialSetup(): Promise<void> {
   console.log("[worker] Starting initial setup...");
+
+  // Skip bootstrap flow entirely on restart if all operational accounts are already funded.
+  const alreadyFunded = await areOperationalAccountsFunded();
+  if (alreadyFunded) {
+    console.log("[worker] Operational accounts already funded, skipping bootstrap distribution");
+    console.log("[worker] Initial setup complete");
+    return;
+  }
 
   // Fund bootstrap from whales if running locally
   const isLocalEnvironment = WORKER_RPC_URL?.includes('localhost') || WORKER_RPC_URL?.includes('127.0.0.1') || WORKER_RPC_URL?.includes('anvil');
