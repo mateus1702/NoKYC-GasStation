@@ -11,15 +11,8 @@ const PAYMASTER_ADDRESS_ENV = (process.env.PAYMASTER_ADDRESS || "").trim().toLow
 const PAYMASTER_API_URL = (process.env.PAYMASTER_API_URL || "").trim().replace(/\/$/, "");
 const RPC_URL = process.env.DASHBOARD_RPC_URL || "";
 const DEFAULT_LIMIT = 30;
-/** Env override: max block range for eth_getLogs. If set, use only this (no retry). */
-const USEROPS_BLOCK_RANGE = process.env.DASHBOARD_USEROPS_BLOCK_RANGE ? BigInt(process.env.DASHBOARD_USEROPS_BLOCK_RANGE) : null;
-/** Cap at 2048 - many public RPCs (Ankr, etc.) reject eth_getLogs with larger ranges. */
-const MAX_SAFE_BLOCK_RANGE = 2048n;
-/** Block ranges to try. Capped to avoid "block range too large" from RPCs. */
-const BLOCK_RANGES_TO_TRY =
-  USEROPS_BLOCK_RANGE != null
-    ? [USEROPS_BLOCK_RANGE > MAX_SAFE_BLOCK_RANGE ? MAX_SAFE_BLOCK_RANGE : USEROPS_BLOCK_RANGE]
-    : [1024n, 512n, 256n, 128n];
+/** Max block range for eth_getLogs (many RPCs reject larger ranges). */
+const USEROPS_BLOCK_RANGE = 1000n;
 
 export interface ProcessedUserOp {
   blockNumber: number;
@@ -96,30 +89,13 @@ export async function fetchRecentProcessedUserOps(limit = DEFAULT_LIMIT): Promis
     });
 
     const block = await client.getBlockNumber();
-    let logs: Awaited<ReturnType<typeof client.getContractEvents>> = [];
-    let lastError: Error | null = null;
-
-    for (const range of BLOCK_RANGES_TO_TRY) {
-      const fromBlock = block > range ? block - range : 0n;
-      try {
-        logs = await client.getContractEvents({
-          address: paymasterAddress as `0x${string}`,
-          abi: [parseAbiItem("event GasCharged(address indexed sender, uint256 chargedUsdcE6, uint256 chargedWei, uint256 initialChargeAmount, uint256 maxCostUsdcE6, uint256 unitCostUsdcPerWei, uint256 minPostopFeeUsdcE6, address treasury, bool wasMinFeeApplied, bool wasMaxFeeApplied)")],
-          fromBlock,
-          toBlock: block,
-        });
-        lastError = null;
-        break;
-      } catch (e) {
-        lastError = e as Error;
-        const msg = String((e as Error).message || "").toLowerCase();
-        if (msg.includes("block range") || msg.includes("too large") || msg.includes("too wide")) {
-          continue;
-        }
-        throw e;
-      }
-    }
-    if (lastError) throw lastError;
+    const fromBlock = block > USEROPS_BLOCK_RANGE ? block - USEROPS_BLOCK_RANGE : 0n;
+    const logs = await client.getContractEvents({
+      address: paymasterAddress as `0x${string}`,
+      abi: [parseAbiItem("event GasCharged(address indexed sender, uint256 chargedUsdcE6, uint256 chargedWei, uint256 initialChargeAmount, uint256 maxCostUsdcE6, uint256 unitCostUsdcPerWei, uint256 minPostopFeeUsdcE6, address treasury, bool wasMinFeeApplied, bool wasMaxFeeApplied)")],
+      fromBlock,
+      toBlock: block,
+    });
 
     const rawMapped = logs.map((log) => {
       // viem log type can be a union where decoded args are absent.
