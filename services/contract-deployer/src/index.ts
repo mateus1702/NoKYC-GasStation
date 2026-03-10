@@ -91,14 +91,18 @@ async function getChain(): Promise<Chain> {
 
 const main = async () => {
 	if (!process.env.ANVIL_RPC?.trim()) throw new Error("ANVIL_RPC required (set in .env)");
+	const isProduction = process.env.CONTRACT_DEPLOYER_PRODUCTION === "true";
 	const chain: Chain = await getChain();
 
-	// Create clients.
-	const anvilClient = createTestClient({
-		transport: http(process.env.ANVIL_RPC),
-		mode: "anvil",
-		chain,
-	});
+	// Create clients. anvilClient only for non-production (Anvil-specific RPC methods).
+	let anvilClient: ReturnType<typeof createTestClient> | null = null;
+	if (!isProduction) {
+		anvilClient = createTestClient({
+			transport: http(process.env.ANVIL_RPC),
+			mode: "anvil",
+			chain,
+		});
+	}
 
 	const client = createPublicClient({
 		transport: http(process.env.ANVIL_RPC),
@@ -111,11 +115,13 @@ const main = async () => {
 		transport: http(process.env.ANVIL_RPC),
 	});
 
-	// Seed wallet with ETH for deployment.
-	await anvilClient.setBalance({
-		address: walletClient.account.address,
-		value: parseEther("1000"),
-	});
+	// Seed wallet with ETH for deployment (Anvil only).
+	if (!isProduction && anvilClient) {
+		await anvilClient.setBalance({
+			address: walletClient.account.address,
+			value: parseEther("1000"),
+		});
+	}
 
 	const verifyDeployed = async (addresses: Address[]) => {
 		for (const address of addresses) {
@@ -132,6 +138,21 @@ const main = async () => {
 
 	if (process.env.CONTRACT_DEPLOYER_SKIP_DEPLOYMENTS === "true") {
 		console.log("Skipping Deployments...");
+
+		if (isProduction) {
+			// Production: skip all Anvil setup, deploy Project4Paymaster only
+			if (process.env.CONTRACT_DEPLOYER_DEPLOY_PROJECT4_PAYMASTER === "true") {
+				try {
+					await deployProject4Paymaster();
+				} catch (e) {
+					console.error("[Project4Paymaster] Deploy failed:", e);
+				}
+			}
+			process.exit(0);
+		}
+
+		// Non-production: Anvil setup for forked mainnet testing
+		if (!anvilClient) throw new Error("anvilClient required for non-production skip path");
 
 		// Remove EIP-7702 code delegations from anvil accounts 0-9
 		// This resets them to regular EOAs for testing on forked mainnet.
@@ -171,7 +192,7 @@ const main = async () => {
 
 			promises.push(
 				noncePromise.then((nonce) => {
-					anvilClient.setNonce({
+					anvilClient!.setNonce({
 						address: wallet.account.address,
 						nonce: nonce,
 					});
@@ -196,6 +217,10 @@ const main = async () => {
 
 		process.exit(0);
 	}
+
+	// Full deployment path requires Anvil (dev only)
+	if (!anvilClient) throw new Error("anvilClient required for full deployment (use CONTRACT_DEPLOYER_SKIP_DEPLOYMENTS=true for production)");
+	const anvil = anvilClient;
 
 	// Get current nonce from chain to support pre-existing state
 	let nonce = await client.getTransactionCount({
@@ -323,7 +348,7 @@ const main = async () => {
 		})
 		.then(() => console.log("[SAFE V0.7] Deploying Safe 4337 Module"));
 
-	await anvilClient
+	await anvil
 		.setCode({
 			address: SAFE_SINGLETON_FACTORY,
 			bytecode: SAFE_SINGLETON_FACTORY_BYTECODE,
@@ -370,7 +395,7 @@ const main = async () => {
 		})
 		.then(() => console.log("[SAFE] Deploying Safe Multi Send Call Only"));
 
-	await anvilClient
+	await anvil
 		.setCode({
 			address: BICONOMY_SINGLETON_FACTORY,
 			bytecode: BICONOMY_SINGLETON_FACTORY_BYTECODE,
@@ -556,7 +581,7 @@ const main = async () => {
 	let onchainNonce = 0;
 	do {
 		// Mine a new block including all pending txs so the nonce syncs
-		await anvilClient.mine({ blocks: 1 });
+		await anvil.mine({ blocks: 1 });
 
 		// Update nonce
 		onchainNonce = await client.getTransactionCount({
@@ -569,12 +594,12 @@ const main = async () => {
 
 	// ==== SETUP KERNEL V0.6 CONTRACTS ==== //
 	const kernelFactoryOwner = "0x9775137314fE595c943712B0b336327dfa80aE8A";
-	await anvilClient.setBalance({
+	await anvil.setBalance({
 		address: kernelFactoryOwner,
 		value: parseEther("100"),
 	});
 
-	await anvilClient.impersonateAccount({
+	await anvil.impersonateAccount({
 		address: kernelFactoryOwner,
 	});
 
@@ -616,18 +641,18 @@ const main = async () => {
 		chain,
 	});
 
-	await anvilClient.stopImpersonatingAccount({
+	await anvil.stopImpersonatingAccount({
 		address: kernelFactoryOwner,
 	});
 
 	// ==== SETUP ALCHEMY LIGHT ACCOUNT CONTRACTS ==== //
 	const alchemyLightClientOwner = "0xDdF32240B4ca3184De7EC8f0D5Aba27dEc8B7A5C";
-	await anvilClient.setBalance({
+	await anvil.setBalance({
 		address: alchemyLightClientOwner,
 		value: parseEther("100"),
 	});
 
-	await anvilClient.impersonateAccount({
+	await anvil.impersonateAccount({
 		address: alchemyLightClientOwner,
 	});
 
@@ -639,7 +664,7 @@ const main = async () => {
 		chain,
 	});
 
-	await anvilClient.stopImpersonatingAccount({
+	await anvil.stopImpersonatingAccount({
 		address: alchemyLightClientOwner,
 	});
 

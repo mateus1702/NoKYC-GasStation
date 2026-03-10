@@ -12,7 +12,7 @@ import {
 	walletActions,
 	type Address,
 } from "viem";
-import { mnemonicToAccount } from "viem/accounts";
+import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 
@@ -68,23 +68,31 @@ export async function deployProject4Paymaster(): Promise<Address> {
 		rpcUrls: { default: { http: [rpc] } },
 	});
 
-	const deployer = mnemonicToAccount(
-		"test test test test test test test test test test test junk",
-		{ addressIndex: 0 }
-	);
+	const isProduction = process.env.CONTRACT_DEPLOYER_PRODUCTION === "true";
+	const deployer = isProduction
+		? (() => {
+				const pk = process.env.CONTRACT_DEPLOYER_PRIVATE_KEY?.trim();
+				if (!pk) throw new Error("CONTRACT_DEPLOYER_PRIVATE_KEY required in production");
+				return privateKeyToAccount(pk as `0x${string}`);
+			})()
+		: mnemonicToAccount("test test test test test test test test test test test junk", {
+				addressIndex: 0,
+			});
 
 	const publicClient = createPublicClient({
 		chain,
 		transport: http(rpc),
 	});
 
-	const anvilClient = createTestClient({
-		transport: http(rpc),
-		mode: "anvil",
-		chain,
-	});
-
-	await anvilClient.setBalance({ address: deployer.address, value: parseEther("1000") });
+	if (!isProduction) {
+		const anvilClient = createTestClient({
+			transport: http(rpc),
+			mode: "anvil",
+			chain,
+		});
+		await anvilClient.setBalance({ address: deployer.address, value: parseEther("1000") });
+	}
+	// Production: deployer wallet must be pre-funded with MATIC/ETH
 
 	const walletClient = createWalletClient({
 		account: deployer,
