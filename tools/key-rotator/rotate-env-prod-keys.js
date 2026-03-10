@@ -200,6 +200,7 @@ async function main() {
     WORKER_TREASURY_PRIVATE_KEY: workerTreasury.privateKey,
     PAYMASTER_CONTRACT_TREASURY_ADDRESS: workerTreasury.address,
     DASHBOARD_TREASURY_ADDRESS: workerTreasury.address,
+    DASHBOARD_REVENUE_ADDRESS: workerRevenue.address,
   };
 
   const commentUpdates = {

@@ -1,9 +1,8 @@
 /**
- * Server-side metrics aggregation for NoKYC-GasStation dashboard.
- * Reads Redis, RPC, health endpoints. Fail-soft per section.
+ * Server-side metrics for NoKYC-GasStation dashboard.
+ * Reads RPC, health endpoints. No aggregation; snapshot data only. Fail-soft per section.
  */
 import { readFile } from "node:fs/promises";
-import Redis from "ioredis";
 import { createPublicClient, http as viemHttp } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { polygon } from "viem/chains";
@@ -12,9 +11,10 @@ const ENTRYPOINT_ADDRESS = (process.env.DASHBOARD_ENTRYPOINT_ADDRESS || "").toLo
 const PAYMASTER_ADDRESS_FILE = process.env.CONTRACT_DEPLOYER_PAYMASTER_ADDRESS_FILE || "";
 const PAYMASTER_ADDRESS_ENV = (process.env.PAYMASTER_ADDRESS || "").trim().toLowerCase();
 const TREASURY_ADDRESS = (process.env.DASHBOARD_TREASURY_ADDRESS || "").toLowerCase();
+const REVENUE_ADDRESS = (
+  process.env.DASHBOARD_REVENUE_ADDRESS || process.env.WORKER_REVENUE_ADDRESS || ""
+).toLowerCase();
 const RPC_URL = process.env.DASHBOARD_RPC_URL || "";
-const VALKEY_URL = process.env.VALKEY_URL ?? process.env.REDIS_URL ?? "";
-const VALKEY_KEY_PREFIX = process.env.VALKEY_KEY_PREFIX || "";
 const PAYMASTER_API_URL = process.env.PAYMASTER_API_URL || "";
 const BUNDLER_URL = process.env.DASHBOARD_BUNDLER_URL || "";
 const USDC_ADDRESS = (process.env.DASHBOARD_USDC_ADDRESS || "").toLowerCase();
@@ -23,11 +23,6 @@ const ALTO_EXECUTOR_KEYS = (process.env.DASHBOARD_ALTO_EXECUTOR_KEYS || "")
   .split(",")
   .map((k) => k.trim())
   .filter(Boolean);
-
-const PRICING_SPENT = `${VALKEY_KEY_PREFIX}pricing:total_usdc_spent_e6`;
-const PRICING_GAS = `${VALKEY_KEY_PREFIX}pricing:total_gas_returned_wei`;
-const INV_ETH = `${VALKEY_KEY_PREFIX}inv:eth_wei`;
-const INV_COST = `${VALKEY_KEY_PREFIX}inv:cost_usdc_e6`;
 
 const ENTRYPOINT_ABI = [
   {
@@ -71,12 +66,9 @@ export interface MetricsPayload {
     value?: MetricValue;
     error?: string;
   };
-  pricing: {
+  revenueUsdcReserve: {
     status: "ok" | "error";
-    totalUsdcSpentE6?: MetricValue;
-    totalGasReturnedWei?: MetricValue;
-    unitCostUsdcPerWei?: MetricValue;
-    usdcPer1MGas?: MetricValue;
+    value?: MetricValue;
     error?: string;
   };
   workerConfig: {
@@ -102,7 +94,6 @@ export interface MetricsPayload {
   health: {
     paymasterApi: "ok" | "error";
     bundler: "ok" | "error";
-    redis: "ok" | "error";
   };
 }
 
@@ -126,28 +117,13 @@ function usdcE6ToMetric(e6: bigint): MetricValue {
   };
 }
 
-/** For unit cost: raw is usdc_e6*1e18/eth_wei; formatted = raw/1e6 = USDC per 1 ETH */
-function unitCostToMetric(v: bigint): MetricValue {
-  const formatted = Number(v) / 1e6;
-  return {
-    raw: v.toString(),
-    formatted: formatted >= 1 ? formatted.toFixed(2) : formatted.toFixed(6),
-    unit: "usdc_e6*1e18/wei",
-    formattedUnit: "USDC/ETH",
-  };
-}
-
-function key(name: string): string {
-  return `${VALKEY_KEY_PREFIX}${name}`;
-}
-
 export async function collectMetrics(): Promise<MetricsPayload> {
   const payload: MetricsPayload = {
     paymasterAddress: { status: "error", error: "not fetched" },
     entryPointDeposit: { status: "error", error: "not fetched" },
     workerNativeReserve: { status: "error", error: "not set" },
     workerUsdcReserve: { status: "error", error: "not set" },
-    pricing: { status: "error", error: "not fetched" },
+    revenueUsdcReserve: { status: "error", error: "not set" },
     workerConfig: {
       status: "ok",
       pollIntervalMs: Number(process.env.DASHBOARD_POLL_INTERVAL_MS || "0"),
@@ -159,7 +135,7 @@ export async function collectMetrics(): Promise<MetricsPayload> {
     },
     bundlerUtilityBalance: { status: "error", error: "not set" },
     bundlerExecutorBalances: { status: "error", items: [], error: "not set" },
-    health: { paymasterApi: "error", bundler: "error", redis: "error" },
+    health: { paymasterApi: "error", bundler: "error" },
   };
 
   // Paymaster address: env override > file > fetch from API (for local dev)
@@ -200,6 +176,7 @@ export async function collectMetrics(): Promise<MetricsPayload> {
     payload.entryPointDeposit = { status: "error", error: "RPC_URL required (set in .env)" };
     payload.workerNativeReserve = { status: "error", error: "RPC_URL required (set in .env)" };
     payload.workerUsdcReserve = { status: "error", error: "RPC_URL required (set in .env)" };
+    payload.revenueUsdcReserve = { status: "error", error: "RPC_URL required (set in .env)" };
   } else {
   const client = createPublicClient({
     chain: polygon,
@@ -249,6 +226,21 @@ export async function collectMetrics(): Promise<MetricsPayload> {
     }
   }
 
+  // Revenue USDC reserve (needs REVENUE_ADDRESS and USDC_ADDRESS) — where paymaster sends fees
+  if (REVENUE_ADDRESS && USDC_ADDRESS) {
+    try {
+      const balance = (await client.readContract({
+        address: USDC_ADDRESS as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [REVENUE_ADDRESS as `0x${string}`],
+      })) as bigint;
+      payload.revenueUsdcReserve = { status: "ok", value: usdcE6ToMetric(balance) };
+    } catch (e) {
+      payload.revenueUsdcReserve = { status: "error", error: (e as Error).message };
+    }
+  }
+
   // Bundler utility balance (derive address from ALTO_UTILITY_PRIVATE_KEY) — display in ETH
   if (ALTO_UTILITY_KEY) {
     try {
@@ -280,38 +272,6 @@ export async function collectMetrics(): Promise<MetricsPayload> {
   }
   }
 
-  // Redis pricing totals (new keys first, fallback to legacy)
-  if (!VALKEY_URL) {
-    payload.pricing = { status: "error", error: "VALKEY_URL required (set in .env)" };
-  } else try {
-    const redis = new Redis(VALKEY_URL, { maxRetriesPerRequest: 1, connectTimeout: 3000 });
-    const spentStr = await redis.get(key(PRICING_SPENT));
-    const gasStr = await redis.get(key(PRICING_GAS));
-    let totalUsdcSpentE6 = spentStr ? BigInt(spentStr) : 0n;
-    let totalGasReturnedWei = gasStr ? BigInt(gasStr) : 0n;
-    if (totalUsdcSpentE6 === 0n || totalGasReturnedWei === 0n) {
-      const ethStr = await redis.get(key(INV_ETH));
-      const costStr = await redis.get(key(INV_COST));
-      totalUsdcSpentE6 = costStr ? BigInt(costStr) : totalUsdcSpentE6;
-      totalGasReturnedWei = ethStr ? BigInt(ethStr) : totalGasReturnedWei;
-    }
-    redis.quit();
-
-    const unitCostUsdcPerWei = totalGasReturnedWei > 0n ? (totalUsdcSpentE6 * 10n ** 18n) / totalGasReturnedWei : 0n;
-    const usdcPer1MGas = unitCostUsdcPerWei > 0n ? (unitCostUsdcPerWei * 1_000_000n) / 10n ** 18n : 0n;
-
-    payload.pricing = {
-      status: "ok",
-      totalUsdcSpentE6: usdcE6ToMetric(totalUsdcSpentE6),
-      totalGasReturnedWei: weiToMetric(totalGasReturnedWei),
-      unitCostUsdcPerWei: unitCostToMetric(unitCostUsdcPerWei),
-      usdcPer1MGas: usdcE6ToMetric(usdcPer1MGas),
-    };
-    payload.health.redis = "ok";
-  } catch (e) {
-    payload.pricing = { status: "error", error: (e as Error).message };
-  }
-
   // Health checks
   if (PAYMASTER_API_URL) {
     try {
@@ -325,16 +285,6 @@ export async function collectMetrics(): Promise<MetricsPayload> {
     try {
       const res = await fetch(`${BUNDLER_URL.replace(/\/$/, "")}/health`, { signal: AbortSignal.timeout(3000) });
       payload.health.bundler = res.ok ? "ok" : "error";
-    } catch {
-      /* remain error */
-    }
-  }
-  if (payload.health.redis === "error" && VALKEY_URL) {
-    try {
-      const redis = new Redis(VALKEY_URL, { maxRetriesPerRequest: 1, connectTimeout: 2000 });
-      await redis.ping();
-      redis.quit();
-      payload.health.redis = "ok";
     } catch {
       /* remain error */
     }

@@ -97,7 +97,7 @@ function MetricCard({
         stiffness: 100
       }}
       whileHover={{ y: -2, scale: 1.02 }}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${statusColors[status]} border backdrop-blur-sm p-6 shadow-xl max-w-xl w-full`}
+      className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${statusColors[status]} border backdrop-blur-sm p-6 shadow-xl max-w-xl w-full`}
     >
       {/* Background glow effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
@@ -129,7 +129,6 @@ function MetricCard({
               </div>
             </div>
           </div>
-          <CopyButton value={value.raw} />
         </div>
 
         <div className="mt-4 flex items-center justify-between">
@@ -137,6 +136,11 @@ function MetricCard({
             Raw: {value.raw} {value.unit}
           </p>
         </div>
+      </div>
+
+      {/* Copy button - centered overlay, visible only on hover */}
+      <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 z-20 rounded-2xl">
+        <CopyButton value={value.raw} />
       </div>
     </motion.div>
   );
@@ -288,20 +292,6 @@ function HeroSection({ data, health, isValidating }: {
       });
     }
 
-    // Total USDC spent
-    if (data.pricing?.status === "ok" && data.pricing.totalUsdcSpentE6) {
-      metrics.push({
-        title: "Total USDC Spent",
-        value: data.pricing.totalUsdcSpentE6,
-        icon: (
-          <svg className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-          </svg>
-        ),
-        status: "normal" as const,
-      });
-    }
-
     return metrics;
   }, [data]);
 
@@ -350,11 +340,6 @@ function HeroSection({ data, health, isValidating }: {
                 status={health?.bundler ?? "unknown"}
                 description="UserOp submission"
               />
-              <StatusIndicator
-                name="Redis"
-                status={health?.redis ?? "unknown"}
-                description="Data storage"
-              />
             </motion.div>
           </div>
 
@@ -401,6 +386,7 @@ function HeroSection({ data, health, isValidating }: {
 }
 
 export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState<"live-metrics" | "configurations">("live-metrics");
   const { data, error, isLoading, isValidating } = useSWR("/api/metrics", fetcher, {
     refreshInterval: 5000,
   });
@@ -461,9 +447,9 @@ export default function DashboardPage() {
   const ep = data.entryPointDeposit;
   const workerReserve = data.workerNativeReserve;
   const workerUsdcReserve = data.workerUsdcReserve;
+  const revenueUsdcReserve = data.revenueUsdcReserve;
   const bundlerUtility = data.bundlerUtilityBalance;
   const bundlerExecutors = data.bundlerExecutorBalances;
-  const pricing = data.pricing;
   const cfg = data.workerConfig;
   const health = data.health;
 
@@ -472,46 +458,89 @@ export default function DashboardPage() {
       <div className="w-full max-w-none mx-auto px-4 xl:px-8 2xl:px-12">
         <HeroSection data={data} health={health} isValidating={isValidating} />
 
-        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr">
-          {/* Paymaster & EntryPoint Section */}
-          <Section
-            title="Paymaster & EntryPoint"
-            subtitle="Core contract addresses and EntryPoint deposit management"
-            variant="hero"
-            gridCols="grid-cols-1 xl:grid-cols-2"
+        {/* Tab bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex gap-1 p-1 rounded-xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm mb-8 w-fit"
+        >
+          <button
+            onClick={() => setActiveTab("live-metrics")}
+            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === "live-metrics"
+                ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
+            }`}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="col-span-full lg:col-span-1"
-            >
-              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Paymaster Address</h3>
-                    <p className="text-sm text-slate-400">Contract handling gas payments</p>
-                  </div>
-                </div>
-                <p className="break-all font-mono text-sm text-slate-300 bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
-                  {pm.status === "ok" ? pm.value : `Error: ${pm.error}`}
-                </p>
-                {pm.status === "ok" && (
-                  <div className="mt-4">
-                    <CopyButton value={pm.value} label="Copy paymaster address" />
-                  </div>
-                )}
-              </div>
-            </motion.div>
+            Live Metrics
+          </button>
+          <button
+            onClick={() => setActiveTab("configurations")}
+            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === "configurations"
+                ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
+            }`}
+          >
+            Configurations
+          </button>
+        </motion.div>
 
+        <AnimatePresence mode="wait">
+          {activeTab === "live-metrics" && (
+            <motion.div
+              key="live-metrics"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="grid gap-6 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
+            >
+          {/* USDC Reserves Section */}
+          {(revenueUsdcReserve?.status === "ok" || workerUsdcReserve?.status === "ok") && (
+            <Section
+              title="USDC Reserves"
+              subtitle="Revenue and worker USDC balances"
+              gridCols="grid-cols-1 md:grid-cols-2"
+            >
+              {revenueUsdcReserve?.status === "ok" && revenueUsdcReserve.value && (
+                <MetricCard
+                  title="Revenue"
+                  value={revenueUsdcReserve.value}
+                  icon={
+                    <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  }
+                  status="success"
+                  index={0}
+                />
+              )}
+              {workerUsdcReserve?.status === "ok" && workerUsdcReserve.value && (
+                <MetricCard
+                  title="Worker USDC"
+                  value={workerUsdcReserve.value}
+                  icon={
+                    <svg className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  }
+                  status="normal"
+                  index={1}
+                />
+              )}
+            </Section>
+          )}
+
+          {/* Gas Reserves Section */}
+          <Section
+            title="Gas Reserves"
+            subtitle="Monitor all operational accounts that need gas funding"
+            gridCols="grid-cols-1 sm:grid-cols-2"
+          >
             {ep.status === "ok" && ep.value && (
               <MetricCard
-                title="EntryPoint Deposit"
+                title="EntryPoint Balance"
                 value={ep.value}
                 icon={
                   <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -519,270 +548,50 @@ export default function DashboardPage() {
                   </svg>
                 }
                 status="success"
+                index={0}
+              />
+            )}
+            {workerReserve?.status === "ok" && workerReserve.value && (
+              <MetricCard
+                title="Worker Gas Reserve"
+                value={workerReserve.value}
+                icon={
+                  <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                }
+                status="success"
                 index={1}
               />
             )}
-          </Section>
-
-          {/* Gas Reserves Section */}
-          <Section
-            title="Gas Reserves"
-            subtitle="Monitor all operational accounts that need gas funding"
-            gridCols="grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3"
-          >
-            {/* Worker Reserves */}
-            {(workerReserve?.status === "ok" || workerUsdcReserve?.status === "ok") && (
-              <div className="col-span-full">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {bundlerUtility?.status === "ok" && bundlerUtility.value && (
+              <MetricCard
+                title="Bundler Utility"
+                value={bundlerUtility.value}
+                icon={
+                  <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  Worker Account
-                </h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {workerReserve?.status === "ok" && workerReserve.value && (
-                    <MetricCard
-                      title="Native Gas Reserve"
-                      value={workerReserve.value}
-                      icon={
-                        <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      }
-                      status="success"
-                    />
-                  )}
-                  {workerUsdcReserve?.status === "ok" && workerUsdcReserve.value && (
-                    <MetricCard
-                      title="USDC Balance"
-                      value={workerUsdcReserve.value}
-                      icon={
-                        <svg className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                      }
-                      status="normal"
-                    />
-                  )}
-                </div>
-              </div>
+                }
+                status="warning"
+                index={2}
+              />
             )}
-
-            {/* Bundler Accounts */}
-            <div className="col-span-full">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                Bundler Accounts
-              </h3>
-
-              {bundlerUtility?.status === "ok" && bundlerUtility.value && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4"
-                >
-                  <MetricCard
-                    title="Utility Account Balance"
-                    value={bundlerUtility.value}
-                    icon={
-                      <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    }
-                    status="warning"
-                  />
-                </motion.div>
-              )}
-
-              {bundlerExecutors?.status === "ok" && bundlerExecutors.items?.length > 0 && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {bundlerExecutors.items.map((item: { address: string; value: MetricValue }, i: number) => (
-                    <MetricCard
-                      key={item.address}
-                      title={`Executor ${i + 1} Balance`}
-                      value={item.value}
-                      icon={
-                        <svg className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                        </svg>
-                      }
-                      status="success"
-                      index={i}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </Section>
-
-          {/* Pricing Analytics */}
-          <Section
-            title="Pricing Analytics"
-            subtitle="USDC spending efficiency and gas return metrics"
-            variant="compact"
-            gridCols="grid-cols-1 xl:grid-cols-2"
-          >
-            {pricing.status === "ok" && pricing.totalUsdcSpentE6 && (
-              <>
-                <MetricCard
-                  title="Total USDC Spent"
-                  value={pricing.totalUsdcSpentE6}
-                  icon={
-                    <svg className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  }
-                  status="normal"
-                  index={0}
-                />
-                <MetricCard
-                  title="Total Gas Returned"
-                  value={pricing.totalGasReturnedWei!}
-                  icon={
-                    <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  }
-                  status="success"
-                  index={1}
-                />
-                <MetricCard
-                  title="Unit Cost (USDC/Gas)"
-                  value={pricing.unitCostUsdcPerWei!}
-                  icon={
-                    <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  }
-                  status="warning"
-                  index={2}
-                />
-                <MetricCard
-                  title="Cost per 1M Gas"
-                  value={pricing.usdcPer1MGas!}
-                  icon={
-                    <svg className="h-5 w-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  }
-                  status="normal"
-                  index={3}
-                />
-              </>
-            )}
-          </Section>
-
-          {/* Configuration */}
-          <Section
-            title="System Configuration"
-            subtitle="Worker parameters and operational thresholds"
-            variant="compact"
-            gridCols="grid-cols-1 xl:grid-cols-2"
-          >
-            {/* Operational Settings Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Operational Settings</h3>
-                    <p className="text-sm text-slate-400">Timing and transaction parameters</p>
-                  </div>
-                </div>
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-400">Poll Interval</label>
-                    <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                      <span className="text-white font-medium">{cfg?.pollIntervalMs ?? "-"} ms</span>
-                    </div>
-                  </div>
-
-                  {cfg?.swapUsdcE6 && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Swap USDC Amount</label>
-                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                        <CopyButton value={cfg.swapUsdcE6.raw} />
-                        <span className="text-white font-medium">{cfg.swapUsdcE6.formatted} USDC</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Gas Thresholds Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Gas Thresholds</h3>
-                    <p className="text-sm text-slate-400">EntryPoint and worker gas limits</p>
-                  </div>
-                </div>
-                <div className="grid gap-4">
-                  {cfg?.minEntryPointWei && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Min EntryPoint Gas</label>
-                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                        <CopyButton value={cfg.minEntryPointWei.raw} />
-                        <span className="text-white font-medium">{cfg.minEntryPointWei.formatted} MATIC</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {cfg?.capEntryPointWei && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Cap EntryPoint Gas</label>
-                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                        <CopyButton value={cfg.capEntryPointWei.raw} />
-                        <span className="text-white font-medium">{cfg.capEntryPointWei.formatted} MATIC</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {cfg?.minWorkerWei && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Min Worker Gas</label>
-                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                        <CopyButton value={cfg.minWorkerWei.raw} />
-                        <span className="text-white font-medium">{cfg.minWorkerWei.formatted} MATIC</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {cfg?.capWorkerWei && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Cap Worker Gas</label>
-                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                        <CopyButton value={cfg.capWorkerWei.raw} />
-                        <span className="text-white font-medium">{cfg.capWorkerWei.formatted} MATIC</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
+            {bundlerExecutors?.status === "ok" && bundlerExecutors.items?.length > 0 && bundlerExecutors.items.map((item: { address: string; value: MetricValue }, i: number) => (
+              <MetricCard
+                key={item.address}
+                title={`Executor ${i + 1}`}
+                value={item.value}
+                icon={
+                  <svg className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                }
+                status="success"
+                index={3 + i}
+              />
+            ))}
           </Section>
 
           {/* User Operations Table */}
@@ -894,7 +703,149 @@ export default function DashboardPage() {
               )}
             </div>
           </Section>
-        </div>
+            </motion.div>
+          )}
+
+          {activeTab === "configurations" && (
+            <motion.div
+              key="configurations"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="grid gap-6 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
+            >
+          {/* Paymaster Address */}
+          <Section
+            title="Paymaster Address"
+            subtitle="Contract handling gas payments"
+            variant="hero"
+            gridCols="grid-cols-1"
+          >
+            <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
+              <p className="break-all font-mono text-sm text-slate-300 bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                {pm.status === "ok" ? pm.value : `Error: ${pm.error}`}
+              </p>
+              {pm.status === "ok" && (
+                <div className="mt-4">
+                  <CopyButton value={pm.value} label="Copy paymaster address" />
+                </div>
+              )}
+            </div>
+          </Section>
+
+          {/* Configuration */}
+          <Section
+            title="System Configuration"
+            subtitle="Worker parameters and operational thresholds"
+            variant="compact"
+            gridCols="grid-cols-1 xl:grid-cols-2"
+          >
+            {/* Operational Settings Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Operational Settings</h3>
+                    <p className="text-sm text-slate-400">Timing and transaction parameters</p>
+                  </div>
+                </div>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-400">Poll Interval</label>
+                    <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                      <span className="text-white font-medium">{cfg?.pollIntervalMs ?? "-"} ms</span>
+                    </div>
+                  </div>
+
+                  {cfg?.swapUsdcE6 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Swap USDC Amount</label>
+                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <CopyButton value={cfg.swapUsdcE6.raw} />
+                        <span className="text-white font-medium">{cfg.swapUsdcE6.formatted} USDC</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Gas Thresholds Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 p-6 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Gas Thresholds</h3>
+                    <p className="text-sm text-slate-400">EntryPoint and worker gas limits</p>
+                  </div>
+                </div>
+                <div className="grid gap-4">
+                  {cfg?.minEntryPointWei && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Min EntryPoint Gas</label>
+                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <CopyButton value={cfg.minEntryPointWei.raw} />
+                        <span className="text-white font-medium">{cfg.minEntryPointWei.formatted} MATIC</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {cfg?.capEntryPointWei && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Cap EntryPoint Gas</label>
+                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <CopyButton value={cfg.capEntryPointWei.raw} />
+                        <span className="text-white font-medium">{cfg.capEntryPointWei.formatted} MATIC</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {cfg?.minWorkerWei && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Min Worker Gas</label>
+                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <CopyButton value={cfg.minWorkerWei.raw} />
+                        <span className="text-white font-medium">{cfg.minWorkerWei.formatted} MATIC</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {cfg?.capWorkerWei && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Cap Worker Gas</label>
+                      <div className="flex flex-col items-center gap-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <CopyButton value={cfg.capWorkerWei.raw} />
+                        <span className="text-white font-medium">{cfg.capWorkerWei.formatted} MATIC</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </Section>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
