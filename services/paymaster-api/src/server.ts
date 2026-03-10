@@ -384,24 +384,37 @@ async function getGasPricePayload(): Promise<unknown> {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Open CORS policy: allow all origins, methods, and headers.
+  const corsHeaders = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "*",
+    "access-control-allow-headers": "*",
+  };
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, corsHeaders);
+    res.end();
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/health") {
-    res.writeHead(200, { "content-type": "application/json" });
+    res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
     res.end(JSON.stringify({ ok: true }));
     return;
   }
   if (req.method === "GET" && req.url === "/paymaster-address") {
     try {
       const address = await resolvePaymasterAddress();
-      res.writeHead(200, { "content-type": "application/json" });
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
       res.end(JSON.stringify({ paymasterAddress: address }));
     } catch (e) {
-      res.writeHead(503, { "content-type": "application/json" });
+      res.writeHead(503, { "content-type": "application/json", ...corsHeaders });
       res.end(JSON.stringify({ error: String((e as Error).message) }));
     }
     return;
   }
   if (req.method !== "POST") {
-    res.writeHead(404);
+    res.writeHead(404, corsHeaders);
     res.end();
     return;
   }
@@ -416,7 +429,7 @@ const server = http.createServer(async (req, res) => {
 
     if (method === "getUserOperationGasPrice" || method === "pimlico_getUserOperationGasPrice") {
       const gasPayload = await getGasPricePayload();
-      res.writeHead(200, { "content-type": "application/json" });
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
       res.end(jsonRpcResult(id, gasPayload));
       return;
     }
@@ -424,7 +437,7 @@ const server = http.createServer(async (req, res) => {
       const userOp = params[0] ?? {};
       const entryPointAddress = params[1];
       const payload = await buildStubPayload(userOp, entryPointAddress);
-      res.writeHead(200, { "content-type": "application/json" });
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
       res.end(jsonRpcResult(id, payload));
       return;
     }
@@ -432,21 +445,21 @@ const server = http.createServer(async (req, res) => {
       const userOp = params[0] ?? {};
       const entryPointAddress = params[1];
       const payload = await buildSponsorPayload(userOp, entryPointAddress);
-      res.writeHead(200, { "content-type": "application/json" });
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
       res.end(jsonRpcResult(id, payload));
       return;
     }
     if (method === "eth_supportedEntryPoints") {
-      res.writeHead(200, { "content-type": "application/json" });
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
       res.end(jsonRpcResult(id, [ENTRYPOINT_ADDRESS]));
       return;
     }
 
-    res.writeHead(200, { "content-type": "application/json" });
+    res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
     res.end(jsonRpcError(id, -32601, `Method not found: ${method}`));
   } catch (err) {
     const message = String((err as Error)?.message ?? err);
-    res.writeHead(200, { "content-type": "application/json" });
+    res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
     res.end(jsonRpcError(null, -32000, message));
   }
 });
