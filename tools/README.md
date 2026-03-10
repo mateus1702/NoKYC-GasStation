@@ -4,18 +4,6 @@ This directory contains utility tools for Project4 development and deployment.
 
 ## Available Tools
 
-### 🔑 [Key Generator](./key-generator/)
-Generate Ethereum-compatible private and public key pairs for use in production environments.
-
-**Quick Start:**
-```bash
-cd tools/key-generator
-npm install
-node key-generator-advanced.js 3
-```
-
-See [key-generator/README.md](./key-generator/README.md) for detailed usage instructions.
-
 ### 🔄 [Key Rotator](./key-rotator/)
 Rotate `.env.prod` private keys and validate each generated address is a plain EOA on your RPC before writing.
 
