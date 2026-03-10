@@ -37,6 +37,6 @@ npm run test:contract-tests        # Contract-level security tests
 | Var | Default |
 |-----|---------|
 | RPC_URL | http://127.0.0.1:8545 |
-| BUNDLER_URL | http://127.0.0.1:4337 |
-| PAYMASTER_URL | http://127.0.0.1:3000 |
+| TOOLS_PAYMASTER_URL | http://127.0.0.1:3000 |
+| BUNDLER_URL | `TOOLS_PAYMASTER_URL/bundler/rpc` (CORS proxy). Override to use direct bundler. |
 | PRIVATE_KEY | Anvil account #0 |

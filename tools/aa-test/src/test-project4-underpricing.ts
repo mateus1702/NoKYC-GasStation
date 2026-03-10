@@ -42,6 +42,11 @@ const owner = privateKeyToAccount(
 );
 
 async function main() {
+  console.log("AA Infrastructure:");
+  console.log("  RPC_URL:", RPC_URL);
+  console.log("  Paymaster API:", PAYMASTER_URL);
+  console.log("");
+
   const account = await toSimpleSmartAccount({
     client: publicClient,
     owner,

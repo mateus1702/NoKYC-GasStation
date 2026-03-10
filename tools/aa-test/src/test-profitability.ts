@@ -28,8 +28,9 @@ import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
 
 const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
-const BUNDLER_URL = process.env.BUNDLER_URL ?? "http://127.0.0.1:4337";
 const PAYMASTER_URL = process.env.TOOLS_PAYMASTER_URL ?? "http://127.0.0.1:3000";
+const BUNDLER_URL =
+  process.env.BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
 const PRIVATE_KEY = process.env.TOOLS_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 const USDC_ADDRESS = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" as Address;
@@ -68,6 +69,14 @@ const paymasterClient = createPimlicoClient({
 const owner = privateKeyToAccount(
   (PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : `0x${PRIVATE_KEY}`) as `0x${string}`
 );
+
+function logAaInfra() {
+  console.log("AA Infrastructure:");
+  console.log("  RPC_URL:", RPC_URL);
+  console.log("  Paymaster API:", PAYMASTER_URL);
+  console.log("  Bundler:", BUNDLER_URL);
+  console.log("");
+}
 
 // Test metrics tracking
 interface TestMetrics {
@@ -255,6 +264,7 @@ async function calculateProfit(metrics: TestMetrics): Promise<{ netProfit: bigin
 }
 
 async function main() {
+  logAaInfra();
   console.log("💰 Starting Paymaster Profitability Test");
   console.log("Goal: Verify net profit > 10 USDC from 100 USDC investment");
 

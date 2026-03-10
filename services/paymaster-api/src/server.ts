@@ -71,6 +71,29 @@ function jsonRpcError(id: unknown, code: number, message: string): string {
   return JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } });
 }
 
+/** ERC-4337 bundler methods allowed through the public proxy (avoids generic chain RPC passthrough). */
+const BUNDLER_PROXY_ALLOWED_METHODS = new Set([
+  "eth_sendUserOperation",
+  "eth_estimateUserOperationGas",
+  "eth_getUserOperationByHash",
+  "eth_getUserOperationReceipt",
+  "eth_supportedEntryPoints",
+  "pimlico_getUserOperationGasPrice",
+  "getUserOperationGasPrice",
+]);
+
+/** Forward JSON-RPC body to bundler and return upstream response. */
+async function forwardBundlerRpc(body: string): Promise<{ status: number; bodyText: string; contentType: string }> {
+  const res = await fetch(BUNDLER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  const bodyText = await res.text();
+  const contentType = res.headers.get("content-type") ?? "application/json";
+  return { status: res.status, bodyText, contentType };
+}
+
 function toBigIntHex(v: bigint | number | string): string {
   return `0x${BigInt(v).toString(16)}`;
 }
@@ -414,6 +437,49 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method !== "POST") {
+    res.writeHead(404, corsHeaders);
+    res.end();
+    return;
+  }
+
+  const pathname = (req.url ?? "/").split("?")[0];
+
+  // Bundler proxy: POST /bundler/rpc
+  if (pathname === "/bundler/rpc") {
+    try {
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      const rpc = JSON.parse(body || "{}") as { method?: string; id?: unknown };
+
+      if (Array.isArray(rpc)) {
+        res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
+        res.end(jsonRpcError(null, -32600, "Batch requests not supported"));
+        return;
+      }
+
+      const method = typeof rpc?.method === "string" ? rpc.method : "";
+      if (!BUNDLER_PROXY_ALLOWED_METHODS.has(method)) {
+        res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
+        res.end(jsonRpcError(rpc?.id ?? null, -32601, `Method not found: ${method || "missing"}`));
+        return;
+      }
+
+      const upstream = await forwardBundlerRpc(body);
+      res.writeHead(upstream.status, {
+        "content-type": upstream.contentType,
+        ...corsHeaders,
+      });
+      res.end(upstream.bodyText);
+    } catch (err) {
+      const message = String((err as Error)?.message ?? err);
+      res.writeHead(200, { "content-type": "application/json", ...corsHeaders });
+      res.end(jsonRpcError(null, -32000, message));
+    }
+    return;
+  }
+
+  // Paymaster JSON-RPC: POST /
+  if (pathname !== "/" && pathname !== "") {
     res.writeHead(404, corsHeaders);
     res.end();
     return;

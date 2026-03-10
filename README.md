@@ -72,7 +72,8 @@ npm run test:all-vulnerabilities
 
 - **Dashboard**: http://localhost:3001
 - **Paymaster API**: http://localhost:3000
-- **Bundler**: http://localhost:4337
+- **Bundler (direct)**: http://localhost:4337
+- **Bundler (CORS proxy)**: http://localhost:3000/bundler/rpc — use this for browser-based consumers
 - **Anvil RPC**: http://localhost:8545
 - **Valkey**: localhost:6379
 
@@ -129,6 +130,32 @@ Returns gas price recommendations.
   "paymasterData": "0x..."
 }
 ```
+
+### Bundler Proxy (CORS)
+
+The Paymaster API exposes Alto behind `POST /bundler/rpc` so browser-based consumers avoid CORS. Use the paymaster domain + `/bundler/rpc` instead of calling the bundler on port 4337 directly.
+
+**Migration**: If you currently call `http://<host>:4337`, switch to `https://<paymaster-domain>/bundler/rpc` (same base URL as the paymaster API).
+
+**Allowed methods**: `eth_sendUserOperation`, `eth_estimateUserOperationGas`, `eth_getUserOperationByHash`, `eth_getUserOperationReceipt`, `eth_supportedEntryPoints`, `getUserOperationGasPrice`, `pimlico_getUserOperationGasPrice`.
+
+**Example – eth_supportedEntryPoints:**
+
+```bash
+curl -X POST http://localhost:3000/bundler/rpc \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_supportedEntryPoints","params":[],"id":1}'
+```
+
+**Example – eth_sendUserOperation:**
+
+```bash
+curl -X POST http://localhost:3000/bundler/rpc \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_sendUserOperation","params":[userOp,entryPointAddress],"id":1}'
+```
+
+Replace `localhost:3000` with your paymaster API base URL in production.
 
 ## Configuration (.env)
 
