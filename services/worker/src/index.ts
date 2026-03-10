@@ -482,6 +482,9 @@ async function areOperationalAccountsFunded(): Promise<boolean> {
 
   const paymasterAddress = await resolvePaymasterAddress();
   const minGasLimitWei = await getMinGasLimitWei(true);
+  console.log(
+    `[worker] Startup funding check: threshold=${formatWeiAsEth(minGasLimitWei)}`
+  );
 
   const entryPointDeposit = (await publicClient.readContract({
     address: WORKER_PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS! as `0x${string}`,
@@ -489,6 +492,9 @@ async function areOperationalAccountsFunded(): Promise<boolean> {
     functionName: "balanceOf",
     args: [paymasterAddress],
   })) as bigint;
+  console.log(
+    `[worker] entryPointDeposit ${shortAddress(WORKER_PAYMASTER_CONTRACT_ENTRYPOINT_ADDRESS! as `0x${string}`)} balance=${formatWeiAsEth(entryPointDeposit)}`
+  );
 
   if (entryPointDeposit < minGasLimitWei) {
     console.log(
@@ -509,17 +515,21 @@ async function areOperationalAccountsFunded(): Promise<boolean> {
     accounts.push({ name: `bundler-${index}`, address });
   });
 
+  let allFunded = true;
   for (const account of accounts) {
     const gasBalance = await publicClient.getBalance({ address: account.address });
+    console.log(
+      `[worker] ${account.name} ${shortAddress(account.address)} balance=${formatWeiAsEth(gasBalance)}`
+    );
     if (gasBalance < minGasLimitWei) {
       console.log(
         `[worker] ${account.name} below threshold: ${formatWeiAsEth(gasBalance)} < ${formatWeiAsEth(minGasLimitWei)}`
       );
-      return false;
+      allFunded = false;
     }
   }
 
-  return true;
+  return allFunded;
 }
 
 
