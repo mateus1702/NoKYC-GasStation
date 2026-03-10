@@ -1,0 +1,14 @@
+{
+  "name": "project4-key-rotator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rotate .env.prod keys and validate plain EOAs via RPC",
+  "main": "rotate-env-prod-keys.js",
+  "scripts": {
+    "rotate": "node rotate-env-prod-keys.js"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0"
+  }
+}
+
