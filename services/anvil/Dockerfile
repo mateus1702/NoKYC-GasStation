@@ -13,7 +13,9 @@ ENV ANVIL_MNEMONIC="test test test test test test test test test test test junk"
 EXPOSE 8545
 
 WORKDIR /app
-RUN mkdir -p /app/state
+USER root
+RUN mkdir -p /app/state && chown -R foundry:foundry /app
+USER foundry
 
 COPY --chmod=0755 entrypoint-anvil.sh /app/entrypoint-anvil.sh
 RUN sed -i 's/\r$//' /app/entrypoint-anvil.sh 2>/dev/null || true
