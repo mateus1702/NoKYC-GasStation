@@ -4,8 +4,8 @@ NoKYC-GasStation is a complete ERC-4337 Account Abstraction stack featuring a so
 
 ## Live Demos
 
-- **Dashboard**: View the live monitoring dashboard at http://169.40.135.206:3001/
-- **PrivateMail**: Check out the PrivateMail service at http://169.40.135.206:3002/ - see the repository at https://github.com/mateus1702/PrivateEmail
+- **Dashboard**: View the live monitoring dashboard at https://www.nokycgas.com/
+- **PrivateMail**: Check out the PrivateMail service at https://www.privatemail.foo/ - see the repository at https://github.com/mateus1702/PrivateEmail
 
 ## Architecture
 
@@ -60,6 +60,9 @@ docker compose -f infra/docker/docker-compose.yml --env-file .env ps
 ### 3. Run Tests
 
 ```bash
+# Fast profitability logic (unit tests, no infra)
+npm run test:profitability:logic
+
 # Variable fee integration test
 npm run test:project4:fee
 
@@ -71,7 +74,13 @@ npm run test:project4:underpricing
 
 # Security vulnerability tests
 npm run test:all-vulnerabilities
+
+# Profitability
+npm run test:profitability           # Quick e2e (~minutes)
+npm run test:profitability:soak      # Long-run soak (hours, configurable)
 ```
+
+Integration tests live in `integrated-tests/`. Fast profitability unit tests are in `services/shared`. You can also run from `tools/aa-test` (scripts forward to `integrated-tests`).
 
 ### 4. Access Services
 
@@ -249,10 +258,15 @@ npm run build:dashboard
 # Contract unit tests
 npm run test:contracts
 
+# Profitability logic (fast, no infra)
+npm run test:profitability:logic
+
 # Integration tests
 npm run test:project4:fee          # Variable fee test
 npm run test:project4:underpricing  # Security test
 npm run test:all-vulnerabilities    # All security tests
+npm run test:profitability          # Quick profitability e2e
+npm run test:profitability:soak     # Long-run soak (hours)
 ```
 
 ### Manual Service Management
