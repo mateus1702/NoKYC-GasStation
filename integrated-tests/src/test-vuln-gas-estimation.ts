@@ -1,3 +1,4 @@
+import "./load-env.js";
 /**
  * Vulnerability Confirmation: Gas Estimation Attacks (Medium Risk)
  * Test: Submit operations with unstable gas profiles to observe estimation failures
@@ -23,16 +24,20 @@ import {
 } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
+import {
+  USDC_ADDRESS,
+  DEFAULT_TRANSFER_TARGET,
+  fundAccountWithUSDC,
+  MIN_USDC_BALANCE,
+} from "./funding.js";
 
-const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
+const RPC_URL = process.env.TOOLS_RPC_URL ?? "http://127.0.0.1:8545";
 const PAYMASTER_URL = process.env.TOOLS_PAYMASTER_URL ?? "http://127.0.0.1:3000";
 const BUNDLER_URL =
-  process.env.BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
+  process.env.TOOLS_BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
 const PRIVATE_KEY = process.env.TOOLS_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-const USDC_ADDRESS = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" as Address;
-const WHALE_ADDRESS = "0x47c031236e19d024b42f8de678d3110562d925b5" as Address;
-const FUNDING_AMOUNT = parseUnits("10", 6); // 10 USDC for funding
+const VULN_FUND_AMOUNT = parseUnits(process.env.TOOLS_USDC_FUND_AMOUNT ?? "10", 6);
 
 const localChain = defineChain({
   id: 137,
@@ -72,34 +77,6 @@ function logAaInfra() {
   console.log("");
 }
 
-async function fundAccountWithUSDC(accountAddress: Address) {
-  console.log(`   Funding ${accountAddress} with ${FUNDING_AMOUNT} USDC...`);
-
-  await testClient.impersonateAccount({ address: WHALE_ADDRESS });
-  await testClient.setBalance({ address: WHALE_ADDRESS, value: BigInt(1e18) });
-
-  const usdcAbi = parseAbi([
-    "function transfer(address to, uint256 amount) returns (bool)"
-  ]);
-
-  const transferData = encodeFunctionData({
-    abi: usdcAbi,
-    functionName: "transfer",
-    args: [accountAddress, FUNDING_AMOUNT],
-  });
-
-  await publicClient.request({
-    method: "eth_sendTransaction",
-    params: [{
-      from: WHALE_ADDRESS,
-      to: USDC_ADDRESS,
-      data: transferData,
-    }],
-  } as any);
-
-  await testClient.stopImpersonatingAccount({ address: WHALE_ADDRESS });
-}
-
 async function getUSDCBalance(address: Address): Promise<bigint> {
   const usdc = getContract({
     address: USDC_ADDRESS,
@@ -110,7 +87,7 @@ async function getUSDCBalance(address: Address): Promise<bigint> {
   return await usdc.read.balanceOf([address]);
 }
 
-async function submitUnstableGasOperation(account: any, operationType: string, iteration: number) {
+async function submitUnstableGasOperation(account: { address: Address }, operationType: string, iteration: number) {
   console.log(`   Submitting ${operationType} operation #${iteration}...`);
 
   const initialBalance = await getUSDCBalance(account.address);
@@ -118,30 +95,26 @@ async function submitUnstableGasOperation(account: any, operationType: string, i
   let callData: `0x${string}`;
   let targetAddress: Address;
 
-  // Create operations with unstable gas profiles
   switch (operationType) {
     case 'massive_approval':
-      // Massive approval that might cause gas estimation issues
       callData = encodeFunctionData({
         abi: parseAbi(["function approve(address spender, uint256 amount) returns (bool)"]),
         functionName: "approve",
-        args: [WHALE_ADDRESS, parseUnits("1000000000", 6) * BigInt(iteration)], // Increasing massive amounts
+        args: [DEFAULT_TRANSFER_TARGET, parseUnits("1000000000", 6) * BigInt(iteration)],
       });
       targetAddress = USDC_ADDRESS;
       break;
 
     case 'complex_transfer':
-      // Transfer to contract that might have complex logic
       callData = encodeFunctionData({
         abi: parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]),
         functionName: "transfer",
-        args: [WHALE_ADDRESS, parseUnits("1", 6) + BigInt(iteration * 1000000)], // Variable amounts
+        args: [DEFAULT_TRANSFER_TARGET, parseUnits("1", 6) + BigInt(iteration * 1000000)],
       });
       targetAddress = USDC_ADDRESS;
       break;
 
     default:
-      // Fallback to simple operation
       callData = encodeFunctionData({
         abi: parseAbi(["function balanceOf(address) view returns (uint256)"]),
         functionName: "balanceOf",
@@ -170,25 +143,24 @@ async function submitUnstableGasOperation(account: any, operationType: string, i
 
     console.log(`   ${operationType} #${iteration}: SUCCESS - charged ${usdcCharged} USDC`);
 
-    return { txHash, usdcCharged, success: true, error: null };
-  } catch (error: any) {
-    console.log(`   ${operationType} #${iteration}: FAILED - ${error.message}`);
+    return { txHash, usdcCharged, success: true, error: null as string | null };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(`   ${operationType} #${iteration}: FAILED - ${msg}`);
 
-    // Even on failure, check if any balance was deducted (might indicate partial execution)
     const finalBalance = await getUSDCBalance(account.address);
     const usdcDeducted = initialBalance - finalBalance;
 
-    return { txHash: null, usdcCharged: usdcDeducted, success: false, error: error.message };
+    return { txHash: null as `0x${string}` | null, usdcCharged: usdcDeducted, success: false, error: msg };
   }
 }
 
 async function main() {
   logAaInfra();
-  console.log("🔍 Confirming Gas Estimation Attacks Vulnerability");
+  console.log("Confirming Gas Estimation Attacks Vulnerability");
   console.log("   Testing: Operations with unstable gas profiles should cause failures/variance");
 
   try {
-    // Setup: Create account and fund with USDC
     console.log("1. Setting up test account...");
     const account = await toSimpleSmartAccount({
       client: publicClient,
@@ -196,17 +168,42 @@ async function main() {
       entryPoint: { address: entryPoint07Address, version: "0.7" },
     });
 
-    await fundAccountWithUSDC(account.address);
+    const usdc = getContract({
+      address: USDC_ADDRESS,
+      abi: parseAbi([
+        "function balanceOf(address) view returns (uint256)",
+        "function approve(address, uint256) returns (bool)",
+      ]),
+      client: publicClient,
+    });
+
+    const balanceBefore = await usdc.read.balanceOf([account.address]);
+    if (balanceBefore < MIN_USDC_BALANCE) {
+      console.log(`   Funding ${account.address} with ${VULN_FUND_AMOUNT} USDC...`);
+      await fundAccountWithUSDC(
+        account.address,
+        VULN_FUND_AMOUNT,
+        usdc,
+        publicClient,
+        testClient
+      );
+      const after = await usdc.read.balanceOf([account.address]);
+      console.log(`   USDC balance after fund: ${after}`);
+      if (after < MIN_USDC_BALANCE) {
+        console.error("Failed to fund account with USDC");
+        process.exit(1);
+      }
+    }
+
     const initialUSDC = await getUSDCBalance(account.address);
     console.log(`   Initial USDC balance: ${initialUSDC}`);
 
-    // Get paymaster address (from env or fetch from API)
-    let paymasterAddress = process.env.PAYMASTER_ADDRESS as Address | undefined;
+    let paymasterAddress = process.env.TOOLS_PAYMASTER_ADDRESS as Address | undefined;
     if (!paymasterAddress) {
       const base = PAYMASTER_URL.replace(/\/$/, "");
       const res = await fetch(`${base}/paymaster-address`);
       if (!res.ok) {
-        console.error("Could not get paymaster address. Set PAYMASTER_ADDRESS or ensure paymaster-api is running.");
+        console.error("Could not get paymaster address. Set TOOLS_PAYMASTER_ADDRESS or ensure paymaster-api is running.");
         process.exit(1);
       }
       const json = (await res.json()) as { paymasterAddress?: string };
@@ -218,7 +215,6 @@ async function main() {
       console.log("Paymaster address:", paymasterAddress);
     }
 
-    // Bootstrap: Approve paymaster to spend USDC (this UserOp is not charged)
     console.log("2. Approving paymaster to spend USDC...");
     const bootstrapSmartAccountClient = createSmartAccountClient({
       account,
@@ -241,11 +237,9 @@ async function main() {
     });
     console.log("Bootstrap tx hash:", bootstrapHash);
 
-    // Test: Submit operations with potentially unstable gas profiles
     console.log("3. Executing gas estimation attack simulation...");
-    const operations = [];
+    const operations: { txHash: `0x${string}` | null; usdcCharged: bigint; success: boolean; error: string | null }[] = [];
 
-    // Mix of operation types that might cause estimation issues
     const operationTypes = [
       'massive_approval', 'complex_transfer', 'massive_approval', 'complex_transfer',
       'massive_approval', 'complex_transfer', 'massive_approval', 'complex_transfer'
@@ -254,12 +248,9 @@ async function main() {
     for (let i = 0; i < operationTypes.length; i++) {
       const result = await submitUnstableGasOperation(account, operationTypes[i], i + 1);
       operations.push(result);
-
-      // Small delay between operations
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Analysis
     console.log("4. Analyzing results...");
     const successfulOps = operations.filter(op => op.success);
     const failedOps = operations.filter(op => !op.success);
@@ -270,7 +261,6 @@ async function main() {
     const maxCost = costs.length > 0 ? costs.reduce((max, cost) => cost > max ? cost : max, costs[0]) : 0n;
     const costVariance = maxCost - minCost;
 
-    // Calculate variance percentage
     const avgCost = costs.length > 0 ? costs.reduce((sum, cost) => sum + cost, 0n) / BigInt(costs.length) : 0n;
     const variancePercent = avgCost > 0n ? Number((costVariance * 100n) / avgCost) : 0;
 
@@ -285,21 +275,20 @@ async function main() {
       console.log(`   - Failures: ${failedOps.map(op => op.error).join(', ')}`);
     }
 
-    // Success criteria: observe failures or significant cost variance
     const hasFailures = failedOps.length > 0;
-    const hasHighVariance = variancePercent > 50; // More than 50% variance
+    const hasHighVariance = variancePercent > 50;
 
     if (operations.length >= 5 && (hasFailures || hasHighVariance)) {
       const failureRate = (failedOps.length * 100) / operations.length;
-      console.log(`✅ Gas estimation attacks confirmed: ${failedOps.length}/${operations.length} operations failed (${failureRate}%) or had cost variance >${variancePercent}% from estimates`);
+      console.log(`PASS: Gas estimation attacks confirmed: ${failedOps.length}/${operations.length} operations failed (${failureRate}%) or had cost variance >${variancePercent}%`);
       process.exit(0);
     } else {
-      console.log(`❌ Gas estimation attacks not confirmed: ${failedOps.length} failures, ${variancePercent}% variance`);
+      console.log(`FAIL: Gas estimation attacks not confirmed: ${failedOps.length} failures, ${variancePercent}% variance`);
       process.exit(1);
     }
 
   } catch (error) {
-    console.error("❌ Test failed:", error);
+    console.error("Test failed:", error);
     process.exit(1);
   }
 }

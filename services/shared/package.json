@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "test": "npm run build && node --experimental-vm-modules node_modules/mocha/bin/mocha 'dist/__tests__/*.test.js'"
+    "test": "npm run build && npx mocha \"dist/__tests__/*.test.js\""
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

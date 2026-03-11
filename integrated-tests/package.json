@@ -1,5 +1,5 @@
 {
-  "name": "@project4/aa-test",
+  "name": "@project4/integrated-tests",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -11,10 +11,13 @@
     "test:vuln:gas-griefing": "tsx src/test-vuln-gas-griefing.ts",
     "test:vuln:gas-estimation": "tsx src/test-vuln-gas-estimation.ts",
     "test:profitability": "tsx src/test-profitability.ts",
+    "test:profitability:soak": "tsx src/test-profitability-soak.ts",
     "test:all-vulnerabilities": "npm run test:contract-tests && npm run test:vuln:gas-griefing && npm run test:vuln:gas-estimation",
-    "test:contract-tests": "cd ../../contracts && npx hardhat test test/Project4Paymaster.test.ts"
+    "test:contract-tests": "cd ../contracts && npx hardhat test test/Project4Paymaster.test.ts"
   },
   "dependencies": {
+    "@project4/shared": "*",
+    "dotenv": "^17.3.1",
     "permissionless": "^0.2.25",
     "viem": "^2.46.3"
   },

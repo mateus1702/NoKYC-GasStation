@@ -1,3 +1,4 @@
+import "./load-env.js";
 /**
  * Vulnerability Confirmation: Gas Griefing (Medium Risk)
  * Test: Submit high-gas operations repeatedly to demonstrate inventory drain acceleration
@@ -23,16 +24,20 @@ import {
 } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
+import {
+  USDC_ADDRESS,
+  DEFAULT_TRANSFER_TARGET,
+  fundAccountWithUSDC,
+  MIN_USDC_BALANCE,
+} from "./funding.js";
 
-const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
+const RPC_URL = process.env.TOOLS_RPC_URL ?? "http://127.0.0.1:8545";
 const PAYMASTER_URL = process.env.TOOLS_PAYMASTER_URL ?? "http://127.0.0.1:3000";
 const BUNDLER_URL =
-  process.env.BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
+  process.env.TOOLS_BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
 const PRIVATE_KEY = process.env.TOOLS_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-const USDC_ADDRESS = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" as Address;
-const WHALE_ADDRESS = "0x47c031236e19d024b42f8de678d3110562d925b5" as Address;
-const FUNDING_AMOUNT = parseUnits("10", 6); // 10 USDC for funding
+const VULN_FUND_AMOUNT = parseUnits(process.env.TOOLS_USDC_FUND_AMOUNT ?? "10", 6);
 
 const localChain = defineChain({
   id: 137,
@@ -72,34 +77,6 @@ function logAaInfra() {
   console.log("");
 }
 
-async function fundAccountWithUSDC(accountAddress: Address) {
-  console.log(`   Funding ${accountAddress} with ${FUNDING_AMOUNT} USDC...`);
-
-  await testClient.impersonateAccount({ address: WHALE_ADDRESS });
-  await testClient.setBalance({ address: WHALE_ADDRESS, value: BigInt(1e18) });
-
-  const usdcAbi = parseAbi([
-    "function transfer(address to, uint256 amount) returns (bool)"
-  ]);
-
-  const transferData = encodeFunctionData({
-    abi: usdcAbi,
-    functionName: "transfer",
-    args: [accountAddress, FUNDING_AMOUNT],
-  });
-
-  await publicClient.request({
-    method: "eth_sendTransaction",
-    params: [{
-      from: WHALE_ADDRESS,
-      to: USDC_ADDRESS,
-      data: transferData,
-    }],
-  } as any);
-
-  await testClient.stopImpersonatingAccount({ address: WHALE_ADDRESS });
-}
-
 async function getUSDCBalance(address: Address): Promise<bigint> {
   const usdc = getContract({
     address: USDC_ADDRESS,
@@ -110,20 +87,18 @@ async function getUSDCBalance(address: Address): Promise<bigint> {
   return await usdc.read.balanceOf([address]);
 }
 
-async function submitHighGasOperation(account: any, iteration: number) {
+async function submitHighGasOperation(account: { address: Address }, iteration: number) {
   console.log(`   Submitting high-gas operation #${iteration}...`);
 
   const initialBalance = await getUSDCBalance(account.address);
 
-  // Create call data for an expensive operation - use transfer operations which consume more gas
-  // Transfer small amounts to avoid balance issues, but transfers are more gas-intensive than approvals
   const complexCallData = encodeFunctionData({
     abi: parseAbi([
       "function transfer(address to, uint256 amount) returns (bool)",
       "function approve(address spender, uint256 amount) returns (bool)"
     ]),
     functionName: "transfer",
-    args: [WHALE_ADDRESS, 1000n * BigInt(iteration + 1)], // Small increasing amounts
+    args: [DEFAULT_TRANSFER_TARGET, 1000n * BigInt(iteration + 1)],
   });
 
   const smartAccountClient = createSmartAccountClient({
@@ -143,18 +118,17 @@ async function submitHighGasOperation(account: any, iteration: number) {
   const finalBalance = await getUSDCBalance(account.address);
   const usdcCharged = initialBalance - finalBalance;
 
-  console.log(`   Operation #${iteration}: charged ${usdcCharged} USDC (balance: ${initialBalance} → ${finalBalance})`);
+  console.log(`   Operation #${iteration}: charged ${usdcCharged} USDC (balance: ${initialBalance} -> ${finalBalance})`);
 
   return { txHash, usdcCharged };
 }
 
 async function main() {
   logAaInfra();
-  console.log("🔍 Confirming Gas Griefing Vulnerability");
+  console.log("Confirming Gas Griefing Vulnerability");
   console.log("   Testing: High-gas operations should drain inventory faster than baseline");
 
   try {
-    // Setup: Create account and fund with USDC
     console.log("1. Setting up test account...");
     const account = await toSimpleSmartAccount({
       client: publicClient,
@@ -162,17 +136,42 @@ async function main() {
       entryPoint: { address: entryPoint07Address, version: "0.7" },
     });
 
-    await fundAccountWithUSDC(account.address);
+    const usdc = getContract({
+      address: USDC_ADDRESS,
+      abi: parseAbi([
+        "function balanceOf(address) view returns (uint256)",
+        "function approve(address, uint256) returns (bool)",
+      ]),
+      client: publicClient,
+    });
+
+    const balanceBefore = await usdc.read.balanceOf([account.address]);
+    if (balanceBefore < MIN_USDC_BALANCE) {
+      console.log(`   Funding ${account.address} with ${VULN_FUND_AMOUNT} USDC...`);
+      await fundAccountWithUSDC(
+        account.address,
+        VULN_FUND_AMOUNT,
+        usdc,
+        publicClient,
+        testClient
+      );
+      const after = await usdc.read.balanceOf([account.address]);
+      console.log(`   USDC balance after fund: ${after}`);
+      if (after < MIN_USDC_BALANCE) {
+        console.error("Failed to fund account with USDC");
+        process.exit(1);
+      }
+    }
+
     const initialUSDC = await getUSDCBalance(account.address);
     console.log(`   Initial USDC balance: ${initialUSDC}`);
 
-    // Get paymaster address (from env or fetch from API)
-    let paymasterAddress = process.env.PAYMASTER_ADDRESS as Address | undefined;
+    let paymasterAddress = process.env.TOOLS_PAYMASTER_ADDRESS as Address | undefined;
     if (!paymasterAddress) {
       const base = PAYMASTER_URL.replace(/\/$/, "");
       const res = await fetch(`${base}/paymaster-address`);
       if (!res.ok) {
-        console.error("Could not get paymaster address. Set PAYMASTER_ADDRESS or ensure paymaster-api is running.");
+        console.error("Could not get paymaster address. Set TOOLS_PAYMASTER_ADDRESS or ensure paymaster-api is running.");
         process.exit(1);
       }
       const json = (await res.json()) as { paymasterAddress?: string };
@@ -184,7 +183,6 @@ async function main() {
       console.log("Paymaster address:", paymasterAddress);
     }
 
-    // Bootstrap: Approve paymaster to spend USDC (this UserOp is not charged)
     console.log("2. Approving paymaster to spend USDC...");
     const smartAccountClient = createSmartAccountClient({
       account,
@@ -207,27 +205,22 @@ async function main() {
     });
     console.log("Bootstrap tx hash:", bootstrapHash);
 
-    // Baseline: Submit one normal operation to establish baseline pricing
     console.log("3. Establishing baseline with normal operation...");
     const baselineResult = await submitHighGasOperation(account, 0);
     const baselineCharge = baselineResult.usdcCharged;
     console.log(`   Baseline charge: ${baselineCharge} USDC per operation`);
 
-    // Attack: Submit multiple operations to demonstrate griefing
     console.log("4. Executing gas griefing simulation (10 operations)...");
-    const operations = [];
+    const operations: { txHash: `0x${string}`; usdcCharged: bigint }[] = [];
     let totalCharged = 0n;
 
     for (let i = 1; i <= 10; i++) {
       const result = await submitHighGasOperation(account, i);
       operations.push(result);
       totalCharged += result.usdcCharged;
-
-      // Small delay to avoid overwhelming the system
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Analysis
     console.log("5. Analyzing results...");
     const averageCharge = totalCharged / BigInt(operations.length);
     const chargeAmplification = baselineCharge > 0n
@@ -243,17 +236,16 @@ async function main() {
     console.log(`   - Charge amplification vs baseline: ${chargeAmplification}%`);
     console.log(`   - Total USDC drained: ${totalDrained}`);
 
-    // Success criteria: operations should demonstrate inventory drain
-    if (operations.length >= 10 && totalDrained > parseUnits("1", 6)) { // Drained at least 1 USDC
-      console.log(`✅ Gas griefing confirmed: ${operations.length} operations charged ${totalCharged} USDC (${chargeAmplification}% above baseline), inventory drained by ${totalDrained} USDC`);
+    if (operations.length >= 10 && totalDrained > parseUnits("1", 6)) {
+      console.log(`PASS: Gas griefing confirmed: ${operations.length} operations charged ${totalCharged} USDC`);
       process.exit(0);
     } else {
-      console.log(`❌ Gas griefing not confirmed: insufficient operations (${operations.length}) or drainage (${totalDrained})`);
+      console.log(`FAIL: Gas griefing not confirmed: insufficient operations (${operations.length}) or drainage (${totalDrained})`);
       process.exit(1);
     }
 
   } catch (error) {
-    console.error("❌ Test failed:", error);
+    console.error("Test failed:", error);
     process.exit(1);
   }
 }

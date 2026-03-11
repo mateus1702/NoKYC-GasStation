@@ -1,9 +1,10 @@
+import "./load-env.js";
 /**
  * Test: Sponsored UserOp with SimpleAccount charging variable USDC (Redis inventory).
  * Uses Project4Paymaster + paymaster-api (Redis variable pricing).
  *
  * Prereqs: docker compose up (anvil, contract-deployer, bundler-alto, paymaster-api, valkey, worker)
- * Run: pnpm test:project4:fee (from tools/aa-test)
+ * Run: npm run test:project4:fee (from integrated-tests)
  *
  * Options (env):
  *   RUN_UNTIL_EMPTY=true  - Keep sending UserOps until USDC balance is empty
@@ -26,14 +27,14 @@ import {
 import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
 
-const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
+const RPC_URL = process.env.TOOLS_RPC_URL ?? "http://127.0.0.1:8545";
 const PAYMASTER_URL = process.env.TOOLS_PAYMASTER_URL ?? "http://127.0.0.1:3000";
 const BUNDLER_URL =
-  process.env.BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
+  process.env.TOOLS_BUNDLER_URL ?? `${PAYMASTER_URL.replace(/\/$/, "")}/bundler/rpc`;
 const PRIVATE_KEY = process.env.TOOLS_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 const USDC_ADDRESS = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" as Address;
-const FUNDING_WHALE = process.env.USDC_WHALE as Address | undefined;
+const FUNDING_WHALE = process.env.TOOLS_USDC_WHALE as Address | undefined;
 const FUNDING_AMOUNT = parseUnits(process.env.TOOLS_USDC_FUND_AMOUNT ?? "1000", 6);
 const DEFAULT_WHALE_CANDIDATES = [
   "0xee7ae85f2fe2239e27d9c1e23fffe168d63b4055",
@@ -42,9 +43,9 @@ const DEFAULT_WHALE_CANDIDATES = [
   "0xffa8db7b38579e6a2d14f9b347a9ace4d044cd54",
 ] as Address[];
 const FUNDING_WHALE_CANDIDATES = (
-  process.env.USDC_WHALE_CANDIDATES?.split(",")
+  (process.env.TOOLS_USDC_WHALE_CANDIDATES ?? "").split(",")
     .map((x) => x.trim())
-    .filter(Boolean) ?? []
+    .filter(Boolean)
 ) as Address[];
 
 const RUN_UNTIL_EMPTY = process.env.TOOLS_RUN_UNTIL_EMPTY === "true";
@@ -100,12 +101,12 @@ async function main() {
   console.log("SimpleAccount address:", account.address);
 
   // Get paymaster address (from env or fetch from API)
-  let paymasterAddress = process.env.PAYMASTER_ADDRESS as Address | undefined;
+  let paymasterAddress = process.env.TOOLS_PAYMASTER_ADDRESS as Address | undefined;
   if (!paymasterAddress) {
     const base = PAYMASTER_URL.replace(/\/$/, "");
     const res = await fetch(`${base}/paymaster-address`);
     if (!res.ok) {
-      console.error("Could not get paymaster address. Set PAYMASTER_ADDRESS or ensure paymaster-api is running.");
+      console.error("Could not get paymaster address. Set TOOLS_PAYMASTER_ADDRESS or ensure paymaster-api is running.");
       process.exit(1);
     }
     const json = (await res.json()) as { paymasterAddress?: string };

@@ -8,7 +8,8 @@
     "services/shared",
     "services/paymaster-api",
     "services/worker",
-    "services/dashboard"
+    "services/dashboard",
+    "integrated-tests"
   ],
   "scripts": {
     "dev:dashboard": "node scripts/prepare-dashboard-env.mjs && npm run dev -w @project4/dashboard",
@@ -18,7 +19,16 @@
     "build:worker": "npm run build -w @project4/worker",
     "build:dashboard": "npm run build -w @project4/dashboard",
     "test": "npm run test -ws --if-present",
-    "test:contracts": "npm run test -w contracts"
+    "test:contracts": "npm run test -w contracts",
+    "test:project4:fee": "npm run test:project4:fee -w @project4/integrated-tests",
+    "test:project4:fee:loop": "npm run test:project4:fee:loop -w @project4/integrated-tests",
+    "test:project4:underpricing": "npm run test:project4:underpricing -w @project4/integrated-tests",
+    "test:vuln:gas-griefing": "npm run test:vuln:gas-griefing -w @project4/integrated-tests",
+    "test:vuln:gas-estimation": "npm run test:vuln:gas-estimation -w @project4/integrated-tests",
+    "test:profitability": "npm run test:profitability -w @project4/integrated-tests",
+    "test:profitability:soak": "npm run test:profitability:soak -w @project4/integrated-tests",
+    "test:profitability:logic": "npm run test -w @project4/shared",
+    "test:all-vulnerabilities": "npm run test:all-vulnerabilities -w @project4/integrated-tests"
   },
   "engines": {
     "node": ">=20"

@@ -1,10 +1,11 @@
+import "./load-env.js";
 /**
  * Regression test: Paymaster API must use bundler gas estimate, not client-supplied values.
  * Sends pm_getPaymasterData with fake low gas limits (0,0,0) and asserts the returned
  * signedMaxCostUsdcE6 reflects bundler-authoritative pricing (not undercharged).
  *
  * Prereqs: docker compose up (anvil, contract-deployer, bundler-alto, paymaster-api, valkey, worker)
- * Run: npm run test:project4:underpricing (from tools/aa-test)
+ * Run: npm run test:project4:underpricing (from integrated-tests)
  */
 import {
   createPublicClient,
@@ -19,7 +20,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { toSimpleSmartAccount } from "permissionless/accounts";
 import { defineChain } from "viem";
 
-const RPC_URL = process.env.RPC_URL ?? "http://127.0.0.1:8545";
+const RPC_URL = process.env.TOOLS_RPC_URL ?? "http://127.0.0.1:8545";
 const PAYMASTER_URL = (process.env.TOOLS_PAYMASTER_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 const PRIVATE_KEY = process.env.TOOLS_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
@@ -127,7 +128,7 @@ async function main() {
   }
 
   const decoded = decodeAbiParameters(
-    parseAbiParameters("uint48 validUntil, uint48 validAfter, uint256 maxCostUsdcE6, bytes signature"),
+    parseAbiParameters("uint48 validUntil, uint48 validAfter, uint256 maxCostUsdcE6, uint256 usdcPerGasPrice, uint256 minPostopFeeUsdcE6, bytes signature"),
     paymasterData as `0x${string}`
   );
   const signedMaxCostUsdcE6 = decoded[2] as bigint;

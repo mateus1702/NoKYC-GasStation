@@ -13,7 +13,7 @@ import {
   parseAbiParameters,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { readTotalsState } from "@project4/shared";
+import { computeCogsFromGasSold, computeEffectiveUnitCost, readTotalsState } from "@project4/shared";
 
 /** Dummy signature for bundler gas estimation (passes simulation). */
 const STUB_SIGNATURE =
@@ -286,11 +286,11 @@ async function buildSponsorPayload(userOp: Record<string, unknown>, entryPointAd
   const validAfter = 0n;
 
   const baseUnitCostUsdcPerWei = await getUnitCostUsdcPerWei();
-
-   // Calculate effective unit cost that includes service fee and buffer markup
-  // This ensures postOp charges match the quoted pricing
-  const sponsorEffectiveUnitCostUsdcPerWei = (baseUnitCostUsdcPerWei * (10_000n + SERVICE_FEE_BPS) * (10_000n + QUOTE_BUFFER_BPS)) / (10_000n * 10_000n);
-
+  const sponsorEffectiveUnitCostUsdcPerWei = computeEffectiveUnitCost({
+    baseUnitCostUsdcPerWei,
+    serviceFeeBps: SERVICE_FEE_BPS,
+    quoteBufferBps: QUOTE_BUFFER_BPS,
+  });
 
   const stubPaymasterData = await buildSignedPaymasterData({
     userOp,
@@ -324,8 +324,10 @@ async function buildSponsorPayload(userOp: Record<string, unknown>, entryPointAd
   if (pricingMaxFeePerGas <= 0n) throw new Error("Could not fetch gas price");
   const estimatedCostWei = totalGas * pricingMaxFeePerGas;
 
-  // Convert wei cost to USDC e6 using effective pricing.
-  const estimatedCostUsdcE6 = (estimatedCostWei * sponsorEffectiveUnitCostUsdcPerWei) / 10n ** 18n;
+  const estimatedCostUsdcE6 = computeCogsFromGasSold({
+    gasSoldWei: estimatedCostWei,
+    unitCostUsdcPerWei: sponsorEffectiveUnitCostUsdcPerWei,
+  });
 
   // Add 50% safety buffer and enforce minimum to keep postOp charging path active.
   let maxCostUsdcE6 = (estimatedCostUsdcE6 * 3n) / 2n;
@@ -371,10 +373,11 @@ async function buildStubPayload(userOp: Record<string, unknown>, entryPointAddre
   const validAfter = 0n;
 
   const baseUnitCostUsdcPerWei = await getUnitCostUsdcPerWei();
-
-   // Calculate effective unit cost that includes service fee and buffer markup
-  // This ensures postOp charges match the quoted pricing
-  const sponsorEffectiveUnitCostUsdcPerWei = (baseUnitCostUsdcPerWei * (10_000n + SERVICE_FEE_BPS) * (10_000n + QUOTE_BUFFER_BPS)) / (10_000n * 10_000n);
+  const sponsorEffectiveUnitCostUsdcPerWei = computeEffectiveUnitCost({
+    baseUnitCostUsdcPerWei,
+    serviceFeeBps: SERVICE_FEE_BPS,
+    quoteBufferBps: QUOTE_BUFFER_BPS,
+  });
 
   const paymasterData = await buildSignedPaymasterData({
     userOp,
