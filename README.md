@@ -2,6 +2,11 @@
 
 NoKYC-GasStation is a complete ERC-4337 Account Abstraction stack featuring a sophisticated USDC-denominated paymaster with Redis-backed variable pricing. The system dynamically prices gas based on historical acquisition costs and includes comprehensive security measures.
 
+## Live Demos
+
+- **Dashboard**: View the live monitoring dashboard at http://169.40.135.206:3001/
+- **PrivateMail**: Check out the PrivateMail service at http://169.40.135.206:3002/ - see the repository at https://github.com/mateus1702/PrivateEmail
+
 ## Architecture
 
 ### Services
