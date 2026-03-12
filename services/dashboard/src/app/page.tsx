@@ -7,6 +7,26 @@ import type { MetricValue } from "@/lib/metrics";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+function shortAddress(value: string) {
+  if (!value || value.length < 12) return value;
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function formatLastUpdated(timestamp?: string) {
+  if (!timestamp) return "Unknown";
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  const diffMs = Date.now() - date.getTime();
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSeconds < 5) return "Just now";
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return date.toLocaleString();
+}
+
 // Enhanced copy button with better feedback
 function CopyButton({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -97,7 +117,7 @@ function MetricCard({
         stiffness: 100
       }}
       whileHover={{ y: -2, scale: 1.02 }}
-      className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${statusColors[status]} border backdrop-blur-sm p-6 shadow-xl max-w-xl w-full`}
+      className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${statusColors[status]} border backdrop-blur-sm p-5 shadow-xl w-full`}
     >
       {/* Background glow effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
@@ -231,7 +251,7 @@ function Section({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className={`relative overflow-hidden rounded-3xl border backdrop-blur-xl p-8 shadow-2xl ${variants[variant]} ${className} w-full`}
+      className={`relative overflow-hidden rounded-3xl border backdrop-blur-xl p-6 xl:p-7 shadow-2xl ${variants[variant]} ${className} w-full`}
     >
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
@@ -250,6 +270,55 @@ function Section({
         <div className={`grid gap-6 ${gridCols}`}>{children}</div>
       </div>
     </motion.section>
+  );
+}
+
+function PremiumTopBar({
+  health,
+  paymasterAddress,
+  isValidating,
+  lastUpdated,
+}: {
+  health: { paymasterApi?: string; bundler?: string } | undefined;
+  paymasterAddress?: string;
+  isValidating: boolean;
+  lastUpdated?: string;
+}) {
+  const apiOk = health?.paymasterApi === "ok";
+  const bundlerOk = health?.bundler === "ok";
+  const allOnline = apiOk && bundlerOk;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700/50 bg-slate-900/60 px-4 py-3 backdrop-blur-xl"
+    >
+      <div className="flex items-center gap-3">
+        <span className="inline-flex items-center rounded-full border border-violet-400/40 bg-violet-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-200">
+          Control Center
+        </span>
+        <span className="text-xs text-slate-400">
+          Paymaster: <span className="font-mono text-slate-200">{paymasterAddress ? shortAddress(paymasterAddress) : "n/a"}</span>
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+            allOnline
+              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30"
+              : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
+          }`}
+        >
+          <span className={`h-2 w-2 rounded-full ${allOnline ? "bg-emerald-300" : "bg-amber-300"}`} />
+          {allOnline ? "All Systems Operational" : "Degraded Service"}
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-slate-600/60 bg-slate-800/60 px-3 py-1 text-xs text-slate-300">
+          <span className={`h-2 w-2 rounded-full ${isValidating ? "bg-indigo-300 animate-pulse" : "bg-slate-500"}`} />
+          {isValidating ? "Refreshing live feed" : "Live feed stable"}
+        </span>
+      </div>
+    </motion.div>
   );
 }
 
@@ -296,16 +365,16 @@ function HeroSection({ data, health, isValidating }: {
   }, [data]);
 
   return (
-    <div className="relative mb-12">
+    <div className="relative mb-8">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-pink-900/20 rounded-3xl blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-3xl bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/50 p-8 shadow-2xl"
+        className="relative rounded-3xl bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-slate-700/50 p-6 xl:p-7 shadow-2xl"
       >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex-1">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -315,11 +384,11 @@ function HeroSection({ data, health, isValidating }: {
               <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
                 NoKYC-GasStation
                 <span className="block text-2xl lg:text-3xl font-normal text-slate-400 mt-2">
-                  Dashboard
+                  Premium Operations Dashboard
                 </span>
               </h1>
-              <p className="text-lg text-slate-300 mb-6 max-w-2xl xl:max-w-3xl 2xl:max-w-4xl">
-                Real-time monitoring of your ERC-4337 paymaster operations, gas reserves, and transaction metrics.
+              <p className="text-lg text-slate-300 mb-6 max-w-2xl xl:max-w-3xl 2xl:max-w-4xl leading-relaxed">
+                Real-time command center for ERC-4337 paymaster health, treasury reserves, and execution-quality analytics.
               </p>
             </motion.div>
 
@@ -348,7 +417,7 @@ function HeroSection({ data, health, isValidating }: {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4"
+            className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-4"
           >
             {keyMetrics.map((metric, index) => (
               <MetricCard
@@ -454,21 +523,27 @@ export default function DashboardPage() {
   const health = data.health;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 lg:p-8 xl:p-12 2xl:p-16">
-      <div className="w-full max-w-none mx-auto px-4 xl:px-8 2xl:px-12">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 lg:p-6 xl:p-8 2xl:p-10">
+      <div className="w-full max-w-none mx-auto px-0 xl:px-2 2xl:px-4">
+        <PremiumTopBar
+          health={health}
+          paymasterAddress={pm?.status === "ok" ? pm.value : undefined}
+          isValidating={isValidating}
+          lastUpdated={data?.timestamp}
+        />
         <HeroSection data={data} health={health} isValidating={isValidating} />
 
         {/* Tab bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex gap-1 p-1 rounded-xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm mb-8 w-fit"
+          className="flex gap-1 p-1 rounded-xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm mb-6 w-fit shadow-xl"
         >
           <button
             onClick={() => setActiveTab("live-metrics")}
             className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === "live-metrics"
-                ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 shadow-sm"
+                ? "bg-indigo-500/30 text-indigo-100 border border-indigo-400/40 shadow-sm"
                 : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
             }`}
           >
@@ -478,7 +553,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("configurations")}
             className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === "configurations"
-                ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 shadow-sm"
+                ? "bg-indigo-500/30 text-indigo-100 border border-indigo-400/40 shadow-sm"
                 : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
             }`}
           >
@@ -494,7 +569,7 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="grid gap-6 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
+              className="grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
             >
           {/* USDC Reserves Section */}
           {(revenueUsdcReserve?.status === "ok" || workerUsdcReserve?.status === "ok") && (
@@ -612,18 +687,18 @@ export default function DashboardPage() {
                 </div>
               ) : userOpsData?.items?.length ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="table-modern">
                     <thead>
                       <tr className="border-b border-slate-700/50">
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Block</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Sender</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">USDC Charged</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas (units)</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas Cost (wei)</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Initial Charge</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Gas Price</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Limits</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction</th>
+                        <th>Block</th>
+                        <th>Sender</th>
+                        <th>USDC Charged</th>
+                        <th>Gas (units)</th>
+                        <th>Gas Cost (wei)</th>
+                        <th>Initial Charge</th>
+                        <th>Gas Price</th>
+                        <th>Limits</th>
+                        <th>Transaction</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/30">
@@ -633,31 +708,31 @@ export default function DashboardPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
-                          className="hover:bg-slate-800/30 transition-colors"
+                          className="odd:bg-slate-900/20 hover:bg-slate-800/40 transition-colors"
                         >
-                          <td className="px-4 py-4 text-sm font-mono text-slate-300">{op.blockNumber}</td>
-                          <td className="px-4 py-4 text-sm font-mono text-slate-300 truncate max-w-[120px]" title={op.sender}>
+                          <td className="text-sm font-mono text-slate-300">{op.blockNumber}</td>
+                          <td className="text-sm font-mono text-slate-300 truncate max-w-[120px]" title={op.sender}>
                             <span className="inline-flex items-center gap-2">
-                              <span className="truncate">{op.sender.slice(0, 6)}…{op.sender.slice(-4)}</span>
+                              <span className="truncate">{shortAddress(op.sender)}</span>
                               <CopyButton value={op.sender} />
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-purple-300">
+                          <td className="text-sm font-mono text-purple-300">
                             {(Number(op.chargedUsdcE6) / 1e6).toFixed(6)} USDC
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-green-300">
+                          <td className="text-sm font-mono text-green-300">
                             {op.gasUsed !== "-" ? Number(op.gasUsed).toLocaleString() : "-"}
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
+                          <td className="text-sm font-mono text-slate-300">
                             {op.chargedWei} wei
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-blue-300">
+                          <td className="text-sm font-mono text-blue-300">
                             {(Number(op.initialChargeAmount) / 1e6).toFixed(6)} USDC
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-orange-300">
+                          <td className="text-sm font-mono text-orange-300">
                             {(Number(op.unitCostUsdcPerWei) / 1e18).toFixed(2)} USDC/wei
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
+                          <td className="text-sm font-mono text-slate-300">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-1">
                                 <span className={op.wasMinFeeApplied ? "text-red-400" : "text-green-400"}>
@@ -677,7 +752,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-sm font-mono text-slate-300">
+                          <td className="text-sm font-mono text-slate-300">
                             <span className="inline-flex items-center gap-2">
                               <span className="truncate max-w-[100px]" title={op.transactionHash}>
                                 {op.transactionHash ? `${op.transactionHash.slice(0, 8)}…` : "-"}
@@ -713,7 +788,7 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="grid gap-6 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
+              className="grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 auto-rows-fr"
             >
           {/* Paymaster Address */}
           <Section
