@@ -23,7 +23,7 @@ export default function LoginPage() {
         setError(json.error || "Login failed");
         return;
       }
-      window.location.replace("/");
+      window.location.replace("/dashboard");
     } catch (err) {
       setError((err as Error).message || "Login failed");
     } finally {

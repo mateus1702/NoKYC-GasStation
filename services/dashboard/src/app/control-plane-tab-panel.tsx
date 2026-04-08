@@ -293,12 +293,13 @@ export function ControlPlaneTabPanel() {
       <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5">
         <h3 className="text-sm font-semibold text-amber-200 mb-2">Operational refill</h3>
         <p className="text-sm text-slate-300 leading-relaxed">
-          The paymaster <strong>owner</strong> pulls USDC (<code className="text-xs text-slate-400">withdrawUsdc</code>
-          ), swaps to wrapped native, calls <code className="text-xs text-slate-400">recordGasPurchase</code>, unwraps,
-          then tops up in order: <strong>EntryPoint deposit</strong> for the paymaster contract, <strong>paymaster native</strong>,{" "}
-          <strong>Alto utility</strong>, then <strong>executors</strong> (by address). Trigger runs when <em>any</em> of
-          those balances is below the configured minimum (wei). Requires <code className="text-xs">PAYMASTER_REFILL_OWNER_PRIVATE_KEY</code>{" "}
-          on paymaster-api to match on-chain <code className="text-xs">owner()</code>.
+          The paymaster <strong>owner</strong> pulls USDC (<code className="text-xs text-slate-400">withdrawUsdc</code>),
+          swaps to wrapped native, calls <code className="text-xs text-slate-400">recordGasPurchase</code>, unwraps, then
+          tops up in order: <strong>EntryPoint deposit</strong> for the paymaster contract, <strong>Alto utility</strong>,
+          then <strong>executors</strong> (by address). Trigger runs when <em>any funded target</em> is below the configured
+          minimum (wei). <strong>Paymaster native balance is informational only</strong> (not auto-funded by operational
+          refill). Requires <code className="text-xs">PAYMASTER_REFILL_OWNER_PRIVATE_KEY</code> on paymaster-api to match
+          on-chain <code className="text-xs">owner()</code>.
         </p>
       </div>
 

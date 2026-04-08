@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   authors: [{ name: "NoKYC-GasStation" }],
   viewport: "width=device-width, initial-scale=1",
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    apple: [{ url: "/icon.png", type: "image/png" }],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
 };
 
