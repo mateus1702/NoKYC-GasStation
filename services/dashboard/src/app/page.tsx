@@ -191,38 +191,38 @@ export default function PublicLandingPage() {
 
       {/* Referral Revenue */}
       <section id="referral" className="py-20 border-t border-white/10 bg-slate-950">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
           <div className="text-center mb-12">
             <div className="text-fuchsia-400 text-sm font-mono tracking-[3px] mb-3">REFERRAL REVENUE</div>
-            <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Monetize Every Sponsored UserOp</h2>
-            <p className="text-slate-400 mt-4 max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight">Monetize Every Sponsored UserOp</h2>
+            <p className="text-slate-400 mt-4 max-w-3xl mx-auto text-base sm:text-lg leading-relaxed">
               Integrated dapps can charge for their own service at the same moment users pay gas.
               Add your referral context to sponsorship requests and your fee is included in the USDC charge flow.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-5 sm:gap-6">
-            <div className="rounded-3xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-6 sm:p-8">
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+            <div className="w-full max-w-[560px] mx-auto overflow-hidden rounded-2xl sm:rounded-3xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-5 sm:p-8">
               <h3 className="text-xl sm:text-2xl font-semibold text-fuchsia-200 mb-5">What your users see</h3>
-              <ul className="space-y-3 text-sm text-slate-300">
-                <li>- One clear total fee in USDC before submission.</li>
-                <li>- Gas + infra + dapp service fee combined in one transparent flow.</li>
-                <li>- Better trust and fewer checkout surprises.</li>
+              <ul className="space-y-3 text-sm sm:text-base text-slate-200 leading-relaxed">
+                <li className="flex gap-2"><span className="text-fuchsia-300">•</span><span>One clear total fee in USDC before submission.</span></li>
+                <li className="flex gap-2"><span className="text-fuchsia-300">•</span><span>Gas + infra + dapp service fee combined in one transparent flow.</span></li>
+                <li className="flex gap-2"><span className="text-fuchsia-300">•</span><span>Better trust and fewer checkout surprises.</span></li>
               </ul>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8">
+            <div className="w-full max-w-[560px] mx-auto overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-900/60 p-5 sm:p-8">
               <h3 className="text-xl sm:text-2xl font-semibold text-slate-100 mb-5">How you integrate it</h3>
-              <p className="text-sm text-slate-400 mb-4">
+              <p className="text-sm sm:text-base text-slate-300 mb-4 leading-relaxed">
                 Pass referral context in <span className="font-mono text-slate-200">params[2]</span> of
                 <span className="font-mono text-slate-200"> pm_sponsorUserOperation</span>:
               </p>
-              <pre className="bg-black/50 p-4 rounded-2xl text-xs text-slate-300 overflow-x-auto font-mono leading-relaxed">
+              <pre className="max-w-full bg-black/50 p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-slate-300 overflow-x-auto font-mono leading-relaxed">
 {`{
   "referralAddress": "0xYourRevenueAddress",
   "referralBps": 200
 }`}
               </pre>
-              <p className="text-xs text-slate-500 mt-3">
+              <p className="text-xs sm:text-sm text-slate-400 mt-3">
                 Example above: <span className="font-mono">200 bps = 2.00%</span> referral fee.
               </p>
             </div>
