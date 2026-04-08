@@ -1,0 +1,37 @@
+{
+  "name": "@project4/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "lint": "eslint .",
+    "start": "next start -p 3001",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@project4/shared": "file:../shared",
+    "framer-motion": "^11.0.0",
+    "ioredis": "^5.4.1",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-qr-code": "^2.0.18",
+    "swr": "^2.2.5",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^27.4.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "~5.8.0",
+    "vitest": "^2.1.0"
+  }
+}

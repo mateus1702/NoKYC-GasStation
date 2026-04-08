@@ -1,0 +1,23 @@
+{
+  "name": "@project4/config-bootstrap",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "test": "npm run build && npx mocha \"dist/__tests__/*.test.js\""
+  },
+  "dependencies": {
+    "@project4/shared": "file:../shared",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "chai": "^5.3.3",
+    "mocha": "^11.7.5",
+    "typescript": "~5.8.0"
+  }
+}

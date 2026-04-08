@@ -1,0 +1,33 @@
+{
+  "name": "@project4/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "node -e \"process.exit(0)\"",
+    "lint": "eslint .",
+    "test": "npm run build && npx mocha \"dist/__tests__/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.19.1",
+    "chai": "^5.3.3",
+    "mocha": "^11.7.5",
+    "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.2",
+    "viem": "^2.46.3"
+  }
+}

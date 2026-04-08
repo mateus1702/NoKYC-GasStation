@@ -1,0 +1,24 @@
+---
+description: Never deploy to VM unless user explicitly requests deployment.
+alwaysApply: true
+---
+
+# VM deploy safety gate
+
+Do **not** run VM deployment actions unless the user **explicitly** asks for deployment in the current conversation turn.
+
+## What counts as deployment actions
+
+- Running `scripts/deploy-vm.sh` (any flags, any `DEPLOY_SERVICES` scope).
+- Any SSH/Plink command that pulls images, restarts remote compose services, uploads `.env.prod`, or updates `docker-compose.prod.yml` on the VM.
+- Any remote command sequence whose intent is rollout/release/update of VM services.
+
+## Required behavior
+
+- If user intent is ambiguous (e.g., "check status", "fix this", "test this"), **do not deploy**.
+- Ask a short confirmation question first, e.g. "Do you want me to deploy to the VM now?"
+- Only proceed when the user clearly says yes or explicitly requests deploy.
+
+## Allowed without extra confirmation
+
+- User says "deploy", "deploy to vm", "run deploy-vm.sh", or equivalent explicit wording in that turn.

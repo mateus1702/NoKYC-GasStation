@@ -1,0 +1,30 @@
+---
+description: Start or restart AA stack only via scripts/docker-reset.sh (clean Valkey + volumes).
+alwaysApply: true
+---
+
+# AA infrastructure — Docker reset
+
+Whenever the **account-abstraction stack** (Anvil, Valkey, paymaster-api, bundler, dashboard, deploy/bootstrap, etc.) must be **started, restarted, or brought up**—for example to **verify a fix**, **run integration tests**, or **get a known-clean local/prod-like environment**—use the repo’s reset script. Do **not** rely on ad-hoc `docker compose up` alone as the default.
+
+## Required command
+
+From the **repository root** (where `.env` exists):
+
+```bash
+bash scripts/docker-reset.sh
+```
+
+This runs **`docker compose down -v --remove-orphans`** then **`up -d`** with the default compose file and `--env-file .env`, matching a full teardown including volumes.
+
+- **Production compose file:**  
+  `COMPOSE_FILE=infra/docker/docker-compose.prod.yml bash scripts/docker-reset.sh`
+- **Windows:** use Git Bash / WSL to run the script, or run the **same** compose steps the script uses (same file, `down -v --remove-orphans`, then `up -d` with `.env`).
+
+## Before integration tests or infra checks
+
+Assume the stack should be in a **clean reset state** unless the user explicitly says otherwise. Prefer **`scripts/docker-reset.sh`** before running **`integrated-tests`** or any workflow that depends on Redis config, chain state, or container health.
+
+## If `.env` is missing
+
+The script **exits with an error** when `.env` is not present; fix env setup first—do not skip `--env-file .env`.

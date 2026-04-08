@@ -1,0 +1,274 @@
+{
+  "runId": "2026-04-06T20-18-01-936Z",
+  "startedAt": "2026-04-06T20:18:01.936Z",
+  "finishedAt": "2026-04-06T20:20:08.006Z",
+  "durationMs": 126070,
+  "args": {
+    "count": 10,
+    "createAccount": false
+  },
+  "endpoints": {
+    "rpcUrl": "http://127.0.0.1:8545",
+    "paymasterUrl": "http://127.0.0.1:3000",
+    "bundlerUrl": "http://127.0.0.1:4337"
+  },
+  "account": {
+    "ownerAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "smartAccountAddress": "0x47eca140fB9e5a204e5c1A63f261f21BE702Fa89",
+    "paymasterAddress": "0x95b17857f68828d8997b1375f53119423f0fdc9f"
+  },
+  "envSnapshot": {
+    "PAYMASTER_API_SERVICE_FEE_BPS": "500",
+    "PAYMASTER_API_PRICING_AMPLIFIER_BPS": "100000",
+    "PAYMASTER_API_FALLBACK_USDC_PER_GAS_UNIT_E6": "1",
+    "PAYMASTER_API_REFILL_MIN_NATIVE_WEI": "20000000000000000000",
+    "PAYMASTER_CONTRACT_VERIFICATION_GAS_LIMIT": "200000",
+    "PAYMASTER_CONTRACT_POSTOP_GAS_LIMIT": "600000"
+  },
+  "totals": {
+    "userOps": 10,
+    "totalFeeE6": "80000"
+  },
+  "operations": [
+    {
+      "index": 1,
+      "hash": "0xb5fbde070cfd101711a7371737c0396538c504e114d615eaaed86e20bddae08d",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "3203",
+        "estimatedTotalCostUsdcE6": "3203",
+        "estimatedGas": "3000000",
+        "selectedUsdcPerWeiE6": "1067666",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "0",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "325276",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 2,
+      "hash": "0xf04a47c2daa590f7cea1a473fd472ceac6723a4c8408f49b5cf04e130654a038",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "325276",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "480004",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 3,
+      "hash": "0xa9402d7134db96a4c074b095bb67ac441d4ae120f58a5f4a802ee2b1392d8d84",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "480004",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "634732",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 4,
+      "hash": "0x68c2a1d583f39a6be25f9bb32e1664a232c8831e8e86d8789af21d9293501626",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "634732",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "789488",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 5,
+      "hash": "0x56d1239b0a40e999cbe3def0941b436908f5b47cf8eb56c0330edd533a68a9d4",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "69339",
+        "estimatedTotalCostUsdcE6": "69339",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067890",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "789488",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "944244",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 6,
+      "hash": "0x492d166f170c5986315d0caf1bdf1768e57644428f3e183be85887bdb9b9d8a4",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "944244",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "1099000",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 7,
+      "hash": "0xeac6746d32589bbde5d6a02d59cc5cde4f18bce39624647ff5fd650d801376db",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "1099000",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "1253728",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 8,
+      "hash": "0xc389aba4ad2b06253c565417521ba2c1ee9ff3045a41c53ea0524c99c2031ac1",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "1253728",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "1408456",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 9,
+      "hash": "0x196974a13d45480033cef5e53752cd46597661c6e20d7322a68b9ab2dfa92182",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "854",
+        "estimatedTotalCostUsdcE6": "854",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067499",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "1408456",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "1563184",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    },
+    {
+      "index": 10,
+      "hash": "0xc4959cc0c6b8d03a2dfdc821fc758b730b674d28077aa7e46fa428a14b3d9fb2",
+      "feeE6": "8000",
+      "sponsor": {
+        "estimatedBaseCostUsdcE6": "66802",
+        "estimatedTotalCostUsdcE6": "66802",
+        "estimatedGas": "800000",
+        "selectedUsdcPerWeiE6": "1067890",
+        "sourceGuess": "counters"
+      },
+      "pricingBefore": {
+        "gasUnitsProcessed": "1563184",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      },
+      "pricingAfter": {
+        "gasUnitsProcessed": "1717940",
+        "usdcSpentForGasE6": "16193002",
+        "gasBoughtWei": "175135277626933834620",
+        "derivedUsdcPerWeiE6Raw": "92459"
+      }
+    }
+  ]
+}

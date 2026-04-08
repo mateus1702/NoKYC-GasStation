@@ -1,0 +1,23 @@
+{
+  "name": "@project4/simulation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./lib/usdc-whale-funding.js": "./src/lib/usdc-whale-funding.ts",
+    "./lib/fee-userop-context.js": "./src/lib/fee-userop-context.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "simulate:common-dapp": "tsx src/scenarios/common-dapp-call.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "permissionless": "^0.2.25",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.0"
+  }
+}

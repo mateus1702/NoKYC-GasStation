@@ -1,0 +1,8 @@
+{
+  "name": "@project4/bundler-alto",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ioredis": "^5.4.2"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-04-01T14:30:42.152Z",
+  "options": {
+    "targetOverCapRate": 0.005,
+    "bufferBps": 1500,
+    "minSamples": 3,
+    "candidatePercentiles": [
+      95,
+      97,
+      99,
+      99.5,
+      99.9
+    ]
+  },
+  "recommendations": {
+    "normal": {
+      "profile": "normal",
+      "sampleSize": 8,
+      "successSampleSize": 8,
+      "chosenMetric": "gasUnitsCharged",
+      "chosenCapBeforeBuffer": "166264",
+      "recommendedCap": "191204",
+      "achievedOverCapRate": 0,
+      "percentiles": {
+        "p50": "148194",
+        "p90": "166264",
+        "p95": "166264",
+        "p99": "166264",
+        "p99_5": "166264",
+        "p99_9": "166264"
+      },
+      "candidates": [
+        {
+          "percentile": 95,
+          "capBeforeBuffer": "166264",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 97,
+          "capBeforeBuffer": "166264",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99,
+          "capBeforeBuffer": "166264",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99.5,
+          "capBeforeBuffer": "166264",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99.9,
+          "capBeforeBuffer": "166264",
+          "overCapRate": 0
+        }
+      ]
+    },
+    "deploy": {
+      "profile": "deploy",
+      "sampleSize": 4,
+      "successSampleSize": 4,
+      "chosenMetric": "gasUnitsCharged",
+      "chosenCapBeforeBuffer": "148194",
+      "recommendedCap": "170424",
+      "achievedOverCapRate": 0,
+      "percentiles": {
+        "p50": "148166",
+        "p90": "148194",
+        "p95": "148194",
+        "p99": "148194",
+        "p99_5": "148194",
+        "p99_9": "148194"
+      },
+      "candidates": [
+        {
+          "percentile": 95,
+          "capBeforeBuffer": "148194",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 97,
+          "capBeforeBuffer": "148194",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99,
+          "capBeforeBuffer": "148194",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99.5,
+          "capBeforeBuffer": "148194",
+          "overCapRate": 0
+        },
+        {
+          "percentile": 99.9,
+          "capBeforeBuffer": "148194",
+          "overCapRate": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@project4/integrated-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "tsx src/sponsored-userop-usdc-fee.ts",
+    "gas-cap:discover": "tsx src/gas-cap-discovery.ts --mode run",
+    "gas-cap:analyze": "tsx src/gas-cap-discovery.ts --mode analyze",
+    "test:project4:fee": "tsx src/sponsored-userop-usdc-fee.ts",
+    "test:project4:fee:loop": "cross-env TOOLS_RUN_UNTIL_EMPTY=true tsx src/sponsored-userop-usdc-fee.ts",
+    "test:project4:underpricing": "tsx old/src/test-project4-underpricing.ts",
+    "test:project4:referral": "tsx old/src/test-project4-referral.ts",
+    "test:project4:gas-price": "tsx old/src/test-gas-price-pipeline.ts",
+    "test:vuln:gas-griefing": "tsx old/src/test-vuln-gas-griefing.ts",
+    "test:vuln:gas-estimation": "tsx old/src/test-vuln-gas-estimation.ts",
+    "test:profitability": "tsx old/src/test-profitability.ts",
+    "test:profitability:refill": "tsx old/src/test-profitability-refill.ts",
+    "test:profitability:soak": "tsx old/src/test-profitability-soak.ts",
+    "test:all-vulnerabilities": "npm run test:contract-tests && npm run test:vuln:gas-griefing && npm run test:vuln:gas-estimation",
+    "test:contract-tests": "cd ../contracts && npx hardhat test test/Project4Paymaster.test.ts"
+  },
+  "dependencies": {
+    "@project4/shared": "*",
+    "@project4/simulation": "*",
+    "dotenv": "^17.3.1",
+    "permissionless": "^0.2.25",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.0"
+  }
+}
